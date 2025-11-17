@@ -2,205 +2,221 @@
 using UnityEngine;
 
 /// <summary>
-/// Điều khiển 1 học sinh:
-/// - Đi về bên trái; giữ khoảng cách với học sinh trước mặt.
-/// - Đợi 15s -> Yell 15s -> nếu chưa nhận lệnh thì tự qua đường.
-/// - Gần Player thì ngước đầu + hiện Arrow (child).
-/// - Nhận lệnh toàn cục từ OrdersManager: Z (Cross), X (Stop).
-/// - Bị xe tông thì dính vào xe, rời màn.
-/// - Đụng "Despawn" (trigger tường mép) thì Destroy.
+/// Student/NPC logic: đi sang trái, dừng theo lệnh, nhìn lên khi gần player,
+/// chờ 15s thì la hét 15s; nếu hết 15s vẫn chưa được lệnh qua đường thì tự qua.
+/// Không còn field isYelling thừa – trạng thái đọc/ghi trực tiếp từ Animator.
 /// </summary>
-[RequireComponent(typeof(Animator), typeof(Rigidbody2D))]
+[RequireComponent(typeof(Animator))]
 public class StudentController : MonoBehaviour
 {
-    // --------- Inspector ----------
-    [Header("References")]
-    [SerializeField] private Transform arrow;               // kéo child "Arrow" vào
-    [SerializeField] private CircleCollider2D nearTrigger;  // kéo collider "NearTrigger" (IsTrigger = true) vào
-    [SerializeField] private Transform player;              // kéo Player nếu muốn check distance (không bắt buộc)
+    [Header("Movement")]
+    [SerializeField] private float moveSpeed = 1.2f;      // tốc độ đi bộ (m/s)
+    [SerializeField] private bool startMoving = true;     // spawn ra là đi luôn
 
-    [Header("Move")]
-    [SerializeField] private float walkSpeed = 1.6f;
-    [SerializeField] private float accel = 8f;
-    [SerializeField] private float personalSpace = 0.6f;    // khoảng cách không dính nhau
-    [SerializeField] private LayerMask studentMask;         // chọn Layer Student
+    [Header("Auto Despawn / Biến mất khi ra khỏi màn")]
+    [SerializeField] private float despawnX = -12f;       // x nhỏ hơn giá trị này thì hủy object
+    [SerializeField] private bool destroyOnWallHit = true;// nếu đụng tường (MapCollision) thì hủy
 
-    [Header("Wait / Yell")]
-    [SerializeField] private bool startsWaiting = true;     // sinh ra ở cột: chờ lệnh?
-    [SerializeField] private float waitBeforeYell = 15f;    // 15s chờ
-    [SerializeField] private float yellDuration = 15f;    // 15s la -> tự qua
+    [Header("Yell (la hét)")]
+    [SerializeField] private float waitBeforeYell = 15f;  // đứng chờ bao lâu thì bắt đầu hét
+    [SerializeField] private float yellDuration = 15f;  // hét trong bao lâu
 
-    [Header("Despawn")]
-    [SerializeField] private string despawnTag = "Despawn"; // tag của trigger mép phải
+    [Header("Animator parameter names (điền ĐÚNG như trong Controller)")]
+    [SerializeField] private string pSpeed = "Speed";
+    [SerializeField] private string pNearPlayer = "NearPlayer"; // nếu bạn đang để "NearPlaye" thì gõ đúng tên đó
+    [SerializeField] private string pIsYelling = "IsYelling";
+    [SerializeField] private string pStopOrder = "StopOrder";
+    [SerializeField] private string pIsHit = "IsHit";
+    [SerializeField] private string pCrossOrder = "CrossOrder";
 
-    // ----- Animator params (đảm bảo trùng tên trong Animator) -----
-    static readonly int P_Speed = Animator.StringToHash("Speed");
-    static readonly int P_NearPlayer = Animator.StringToHash("NearPlayer"); // nếu Animator đang lỡ là "NearPlaye", sửa param trong Animator hoặc đổi hằng số này
-    static readonly int P_IsYelling = Animator.StringToHash("IsYelling");
-    static readonly int P_StopOrder = Animator.StringToHash("StopOrder");
-    static readonly int P_IsHit = Animator.StringToHash("IsHit");
-    static readonly int P_CrossOrder = Animator.StringToHash("CrossOrder");
+    // Cached
+    private Animator animator;
+    private Rigidbody2D rb;
 
-    // --------- Runtime ----------
-    Animator anim;
-    Rigidbody2D rb;
-    float currentSpeed;
-    bool stopRequested;
-    bool crossRequested;
-    bool isYelling;
-    bool isHit;
-    bool nearPlayer; // trạng thái gần Player (để bật Arrow/LookUp)
+    // Animator hashes (tính từ string để nhanh và tránh sai chính tả ở runtime)
+    private int hSpeed, hNearPlayer, hIsYelling, hStopOrder, hIsHit, hCrossOrder;
 
-    void Awake()
+    // State
+    private bool nearPlayer = false;
+    private bool stopOrder = false;     // đang bị giữ lại
+    private bool crossOrder = false;    // được lệnh băng qua (hoặc auto sau khi hét)
+    private bool isHit = false;         // bị xe tông
+    private Coroutine yellCoro;
+
+    // Property proxy vào Animator: không còn field isYelling thừa
+    private bool IsYelling
     {
-        anim = GetComponent<Animator>();
-        rb = GetComponent<Rigidbody2D>();
+        get => animator.GetBool(hIsYelling);
+        set => animator.SetBool(hIsYelling, value);
     }
 
-    void OnEnable()
+    private void Awake()
     {
-        OrdersManager.OnStopOrder += HandleStop;
-        OrdersManager.OnCrossOrder += HandleCross;
+        animator = GetComponent<Animator>();
+        rb = GetComponent<Rigidbody2D>(); // có thể null nếu bạn không dùng RB
 
-        if (startsWaiting) StartCoroutine(WaitThenYellThenAutoCross());
+        hSpeed = Animator.StringToHash(pSpeed);
+        hNearPlayer = Animator.StringToHash(pNearPlayer);
+        hIsYelling = Animator.StringToHash(pIsYelling);
+        hStopOrder = Animator.StringToHash(pStopOrder);
+        hIsHit = Animator.StringToHash(pIsHit);
+        hCrossOrder = Animator.StringToHash(pCrossOrder);
     }
 
-    void OnDisable()
+    private void OnEnable()
     {
-        OrdersManager.OnStopOrder -= HandleStop;
-        OrdersManager.OnCrossOrder -= HandleCross;
+        // Trạng thái khởi tạo
+        stopOrder = !startMoving;
+        crossOrder = false;
+        isHit = false;
+        IsYelling = false;
+
+        animator.SetFloat(hSpeed, startMoving ? moveSpeed : 0f);
+        animator.SetBool(hStopOrder, stopOrder);
+        animator.SetBool(hCrossOrder, false);
+        animator.SetBool(hIsHit, false);
+        animator.SetBool(hNearPlayer, false);
+
+        TryStartYellRoutine(); // nếu spawn ra ở trạng thái dừng
     }
 
-    void Start()
+    private void Update()
     {
-        // Nếu không chờ thì cho phép qua luôn
-        crossRequested = !startsWaiting;
-
-        if (arrow) arrow.gameObject.SetActive(false);
-        UpdateAnimatorImmediate();
-    }
-
-    void Update()
-    {
-        // Nếu muốn không dùng nearTrigger, có thể fallback theo khoảng cách:
-        if (!nearTrigger && player)
-            SetNear(Vector2.Distance(transform.position, player.position) < 1.3f);
-
-        if (arrow) arrow.gameObject.SetActive(nearPlayer);
-
-        // Tốc độ mục tiêu theo lệnh
-        float target = (!stopRequested && crossRequested && !isHit) ? walkSpeed : 0f;
-
-        // Chống dính nhau: check 1 vòng tròn nhỏ phía trước (hướng trái)
-        if (target > 0f)
-        {
-            Vector2 probe = (Vector2)transform.position + Vector2.left * personalSpace;
-            var hit = Physics2D.OverlapCircle(probe, 0.18f, studentMask);
-            if (hit && hit.transform != transform) target = 0f;
-        }
-
-        currentSpeed = Mathf.MoveTowards(currentSpeed, target, accel * Time.deltaTime);
-        anim.SetFloat(P_Speed, currentSpeed);
-        anim.SetBool(P_NearPlayer, nearPlayer);
-    }
-
-    void FixedUpdate()
-    {
-        // Di chuyển sang trái theo currentSpeed
-        rb.MovePosition(rb.position + Vector2.left * currentSpeed * Time.fixedDeltaTime);
-    }
-
-    // ---------- Orders ----------
-    void HandleStop()
-    {
-        stopRequested = true;
-        anim.SetBool(P_StopOrder, true);
-    }
-
-    void HandleCross()
-    {
-        crossRequested = true;
-        stopRequested = false;
-        anim.SetBool(P_StopOrder, false);
-        anim.SetBool(P_CrossOrder, true);
-    }
-
-    // ---------- Wait -> Yell -> AutoCross ----------
-    IEnumerator WaitThenYellThenAutoCross()
-    {
-        float t = 0f;
-        while (t < waitBeforeYell && !crossRequested) { t += Time.deltaTime; yield return null; }
-
-        if (!crossRequested)
-        {
-            isYelling = true;
-            anim.SetBool(P_IsYelling, true);
-
-            float y = 0f;
-            while (y < yellDuration && !crossRequested) { y += Time.deltaTime; yield return null; }
-
-            anim.SetBool(P_IsYelling, false);
-            isYelling = false;
-
-            if (!crossRequested) HandleCross(); // hết la vẫn chưa có lệnh -> tự qua
-        }
-    }
-
-    // ---------- Collisions / Triggers ----------
-    // nearTrigger gặp Player: bật/tắt NearPlayer
-    void OnTriggerEnter2D(Collider2D other)
-    {
-        if (other.CompareTag("Player")) { SetNear(true); return; }
-
-        if (other.CompareTag(despawnTag))
+        // Rời màn hình -> hủy
+        if (transform.position.x < despawnX)
         {
             Destroy(gameObject);
             return;
         }
-    }
 
-    void OnTriggerExit2D(Collider2D other)
-    {
-        if (other.CompareTag("Player")) SetNear(false);
-    }
-
-    // Bị xe tông (va chạm cứng với Vehicle layer)
-    void OnCollisionEnter2D(Collision2D collision)
-    {
-        if (collision.gameObject.layer == LayerMask.NameToLayer("Vehicle"))
+        if (isHit)
         {
-            isHit = true;
-            anim.SetBool(P_IsHit, true);
+            animator.SetFloat(hSpeed, 0f);
+            return;
+        }
 
-            // dính vào xe, tắt physics mình
-            rb.simulated = false;
-            transform.SetParent(collision.transform, true);
+        // Di chuyển sang trái nếu không bị giữ
+        float currentSpeed = stopOrder ? 0f : moveSpeed;
 
-            var caps = GetComponent<CapsuleCollider2D>(); if (caps) caps.enabled = false;
-            if (nearTrigger) nearTrigger.enabled = false;
+        if (currentSpeed > 0f)
+        {
+            if (rb != null)
+                rb.MovePosition(rb.position + Vector2.left * currentSpeed * Time.deltaTime);
+            else
+                transform.Translate(Vector3.left * currentSpeed * Time.deltaTime);
+        }
+
+        animator.SetFloat(hSpeed, currentSpeed);
+
+        // Cập nhật nhìn lên khi ở gần player
+        animator.SetBool(hNearPlayer, nearPlayer);
+
+        // Nếu đang dừng mà chưa chạy coroutine thì khởi động
+        TryStartYellRoutine();
+    }
+
+    private void TryStartYellRoutine()
+    {
+        if (stopOrder && yellCoro == null && !IsYelling)
+            yellCoro = StartCoroutine(YellFlow());
+    }
+
+    private IEnumerator YellFlow()
+    {
+        // Chờ trước khi hét
+        float t = 0f;
+        while (t < waitBeforeYell && stopOrder && !crossOrder)
+        {
+            t += Time.deltaTime;
+            yield return null;
+        }
+        if (!stopOrder || crossOrder) { yellCoro = null; yield break; }
+
+        // Bắt đầu hét
+        IsYelling = true;
+        t = 0f;
+        while (t < yellDuration && stopOrder && !crossOrder)
+        {
+            t += Time.deltaTime;
+            yield return null;
+        }
+        IsYelling = false;
+
+        // Hết thời gian mà vẫn chưa được lệnh -> tự băng qua
+        if (stopOrder && !crossOrder)
+            OrderCross();
+
+        yellCoro = null;
+    }
+
+    #region Public API (gọi từ Player / Trigger)
+    /// <summary> Player ra lệnh dừng. </summary>
+    public void OrderStop(bool value = true)
+    {
+        stopOrder = value;
+        animator.SetBool(hStopOrder, value);
+
+        if (!value) // bỏ dừng
+        {
+            crossOrder = false; // chờ lệnh mới
+            IsYelling = false;
+            if (yellCoro != null) { StopCoroutine(yellCoro); yellCoro = null; }
+        }
+        else
+        {
+            TryStartYellRoutine();
         }
     }
 
-    void SetNear(bool value)
+    /// <summary> Player ra lệnh băng qua (hoặc bị auto sau khi hét). </summary>
+    public void OrderCross()
+    {
+        crossOrder = true;
+        stopOrder = false;
+
+        animator.SetBool(hCrossOrder, true);
+        animator.SetBool(hStopOrder, false);
+
+        IsYelling = false;
+        if (yellCoro != null) { StopCoroutine(yellCoro); yellCoro = null; }
+    }
+
+    /// <summary> Gần/xa player (set bởi trigger ở học sinh hoặc vùng xung quanh player). </summary>
+    public void SetNearPlayer(bool value)
     {
         nearPlayer = value;
+        animator.SetBool(hNearPlayer, value);
     }
 
-    void UpdateAnimatorImmediate()
+    /// <summary> Khi bị xe tông. Có thể gắn vào OnCollisionEnter2D ở xe và gọi qua. </summary>
+    public void SetHitByVehicle(Transform vehicle, bool attachToVehicle = true)
     {
-        anim.SetFloat(P_Speed, 0f);
-        anim.SetBool(P_StopOrder, startsWaiting);
-        anim.SetBool(P_CrossOrder, !startsWaiting);
-        anim.SetBool(P_IsYelling, false);
-        anim.SetBool(P_IsHit, false);
+        isHit = true;
+        animator.SetBool(hIsHit, true);
+        animator.SetFloat(hSpeed, 0f);
+        IsYelling = false;
+
+        if (attachToVehicle && vehicle != null)
+        {
+            transform.SetParent(vehicle, true);
+        }
+    }
+    #endregion
+
+    #region Simple triggers (tùy dùng)
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag("Player")) SetNearPlayer(true);
+
+        if (destroyOnWallHit && other.gameObject.layer == LayerMask.NameToLayer("MapCollision"))
+        {
+            Destroy(gameObject);
+        }
     }
 
-#if UNITY_EDITOR
-    void OnDrawGizmosSelected()
+    private void OnTriggerExit2D(Collider2D other)
     {
-        Gizmos.color = Color.white;
-        Vector2 probe = (Vector2)transform.position + Vector2.left * personalSpace;
-        Gizmos.DrawWireSphere(probe, 0.18f);
+        if (other.CompareTag("Player")) SetNearPlayer(false);
     }
-#endif
+    #endregion
 }
