@@ -70,7 +70,7 @@ namespace CrossingSimulator.UI
 
             if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
             {
-                SetFeedback("Nhập username và password trước nhé!");
+                PopupService.Instance.Show("Nhập username và password trước nhé!");
                 return;
             }
 
@@ -82,6 +82,7 @@ namespace CrossingSimulator.UI
             loginSucceeded = false;
             isSubmitting = true;
             lastLoginResponse = null;
+
             if (pressAnyKeyPrompt != null)
                 pressAnyKeyPrompt.SetActive(false);
 
@@ -115,13 +116,14 @@ namespace CrossingSimulator.UI
                     : (!string.IsNullOrEmpty(response.Error) ? response.Error : "Đăng nhập thất bại, thử lại nhé.");
 
                 SetControlsInteractable(true);
-                SetFeedback(message);
+                PopupService.Instance.Show(message);
                 return;
             }
 
             lastLoginResponse = envelope.data;
             loginSucceeded = true;
             AuthTokenStore.Instance.ApplyLoginResponse(lastLoginResponse);
+
             SetFeedback("Đăng nhập thành công! Nhấn phím bất kỳ để vào game.");
             SetControlsInteractable(false);
 
