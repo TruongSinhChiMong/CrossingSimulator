@@ -96,6 +96,8 @@ namespace CrossingSimulator.Networking
             if (request.downloadHandler == null)
                 request.downloadHandler = new DownloadHandlerBuffer();
 
+            ApplyAuthHeaders(request);
+
             yield return request.SendWebRequest();
 
 #if UNITY_2020_1_OR_NEWER
@@ -117,6 +119,17 @@ namespace CrossingSimulator.Networking
 
             onCompleted?.Invoke(response);
             request.Dispose();
+        }
+
+        void ApplyAuthHeaders(UnityWebRequest request)
+        {
+            var tokenStore = AuthTokenStore.Instance;
+            if (tokenStore == null)
+                return;
+
+            var token = tokenStore.AccessToken;
+            if (!string.IsNullOrEmpty(token))
+                request.SetRequestHeader("Authorization", $"Bearer {token}");
         }
     }
 
@@ -146,6 +159,47 @@ namespace CrossingSimulator.Networking
             Error = error;
             Result = result;
             Headers = headers;
+        }
+
+        public bool TryGetEnvelope<TData>(out ApiResponseEnvelope<TData> envelope)
+        {
+            envelope = default;
+
+            if (string.IsNullOrEmpty(Body))
+                return false;
+
+            try
+            {
+                envelope = JsonUtility.FromJson<ApiResponseEnvelope<TData>>(Body);
+                return envelope != null;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[ApiService] Failed to parse response envelope from '{Url}': {ex.Message}");
+                envelope = default;
+                return false;
+            }
+        }
+
+        public ApiResponseEnvelope<TData> GetEnvelopeOrDefault<TData>()
+        {
+            if (TryGetEnvelope<TData>(out var envelope))
+                return envelope;
+
+            int clampedStatus;
+            if (StatusCode > int.MaxValue)
+                clampedStatus = int.MaxValue;
+            else if (StatusCode < int.MinValue)
+                clampedStatus = int.MinValue;
+            else
+                clampedStatus = (int)StatusCode;
+
+            return new ApiResponseEnvelope<TData>
+            {
+                status = clampedStatus,
+                message = string.IsNullOrEmpty(Error) ? "Unable to parse response body." : Error,
+                data = default
+            };
         }
     }
 }

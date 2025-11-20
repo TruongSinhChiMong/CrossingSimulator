@@ -1,3 +1,4 @@
+using CrossingSimulator.Networking;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -23,6 +24,9 @@ namespace CrossingSimulator.UI
 
         Font runtimeFont;
         bool loginSucceeded;
+        bool isSubmitting;
+        Coroutine loginCoroutine;
+        LoginResponse lastLoginResponse;
 
         void Awake()
         {
@@ -45,6 +49,9 @@ namespace CrossingSimulator.UI
         {
             if (loginButton != null)
                 loginButton.onClick.RemoveListener(HandleLoginClicked);
+
+            if (loginCoroutine != null)
+                StopCoroutine(loginCoroutine);
         }
 
         void Update()
@@ -55,29 +62,68 @@ namespace CrossingSimulator.UI
 
         void HandleLoginClicked()
         {
-            var username = usernameField != null ? usernameField.text.Trim() : string.Empty;
+            if (isSubmitting)
+                return;
+
+            var email = usernameField != null ? usernameField.text.Trim() : string.Empty;
             var password = passwordField != null ? passwordField.text.Trim() : string.Empty;
 
-            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
             {
-                if (feedbackLabel != null)
-                    feedbackLabel.text = "Nhập username và password trước nhé!";
+                SetFeedback("Nhập username và password trước nhé!");
                 return;
             }
 
+            BeginLogin(email, password);
+        }
+
+        void BeginLogin(string email, string password)
+        {
+            loginSucceeded = false;
+            isSubmitting = true;
+            lastLoginResponse = null;
+            if (pressAnyKeyPrompt != null)
+                pressAnyKeyPrompt.SetActive(false);
+
+            SetControlsInteractable(false);
+            SetFeedback("Đang đăng nhập...");
+
+            var payload = new LoginRequest
+            {
+                email = email,
+                password = password
+            };
+
+            if (loginCoroutine != null)
+                StopCoroutine(loginCoroutine);
+
+            loginCoroutine = ApiService.Instance.PostJson(ApiPaths.Login, payload, OnLoginCompleted);
+        }
+
+        void OnLoginCompleted(ApiResponse response)
+        {
+            isSubmitting = false;
+            loginCoroutine = null;
+
+            var envelope = response.GetEnvelopeOrDefault<LoginResponse>();
+            var success = response.Success && envelope.IsSuccessStatus && envelope.data != null;
+
+            if (!success)
+            {
+                var message = !string.IsNullOrEmpty(envelope.message)
+                    ? envelope.message
+                    : (!string.IsNullOrEmpty(response.Error) ? response.Error : "Đăng nhập thất bại, thử lại nhé.");
+
+                SetControlsInteractable(true);
+                SetFeedback(message);
+                return;
+            }
+
+            lastLoginResponse = envelope.data;
             loginSucceeded = true;
-
-            if (feedbackLabel != null)
-                feedbackLabel.text = "Đăng nhập thành công! Nhấn phím bất kỳ để vào game.";
-
-            if (loginButton != null)
-                loginButton.interactable = false;
-
-            if (usernameField != null)
-                usernameField.interactable = false;
-
-            if (passwordField != null)
-                passwordField.interactable = false;
+            AuthTokenStore.Instance.ApplyLoginResponse(lastLoginResponse);
+            SetFeedback("Đăng nhập thành công! Nhấn phím bất kỳ để vào game.");
+            SetControlsInteractable(false);
 
             if (pressAnyKeyPrompt != null)
                 pressAnyKeyPrompt.SetActive(true);
@@ -275,6 +321,22 @@ namespace CrossingSimulator.UI
             }
 
             return false;
+        }
+
+        void SetControlsInteractable(bool interactable)
+        {
+            if (loginButton != null)
+                loginButton.interactable = interactable;
+            if (usernameField != null)
+                usernameField.interactable = interactable;
+            if (passwordField != null)
+                passwordField.interactable = interactable;
+        }
+
+        void SetFeedback(string message)
+        {
+            if (feedbackLabel != null)
+                feedbackLabel.text = message ?? string.Empty;
         }
     }
 }
