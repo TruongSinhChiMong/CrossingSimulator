@@ -51,7 +51,7 @@ namespace CrossingSimulator.UI
             if (popupCanvas == null || overlayImage == null || messageText == null || closeButton == null)
                 CreateRuntimePopup();
 
-            closeButton.onClick.AddListener(Hide);
+            AttachCloseHandler();
             Hide();
         }
 
@@ -67,10 +67,13 @@ namespace CrossingSimulator.UI
         public void Show(string message, Action onDismiss = null)
         {
             if (messageText != null)
-                messageText.text = string.IsNullOrEmpty(message) ? "Có lỗi xảy ra." : message;
+                messageText.text = string.IsNullOrEmpty(message) ? "An error occurred." : message;
 
             if (popupCanvas != null)
+            {
                 popupCanvas.enabled = true;
+                popupCanvas.gameObject.SetActive(true);
+            }
 
             currentDismiss = onDismiss;
         }
@@ -78,7 +81,10 @@ namespace CrossingSimulator.UI
         public void Hide()
         {
             if (popupCanvas != null)
+            {
                 popupCanvas.enabled = false;
+                popupCanvas.gameObject.SetActive(false);
+            }
 
             currentDismiss?.Invoke();
             currentDismiss = null;
@@ -147,9 +153,20 @@ namespace CrossingSimulator.UI
             buttonTextRect.offsetMax = Vector2.zero;
             buttonText.font = messageText.font;
             buttonText.fontSize = 20;
-            buttonText.text = "Đã hiểu";
+            buttonText.text = "OK";
             buttonText.alignment = TextAnchor.MiddleCenter;
             buttonText.color = Color.white;
+
+            AttachCloseHandler();
+        }
+
+        void AttachCloseHandler()
+        {
+            if (closeButton == null)
+                return;
+
+            closeButton.onClick.RemoveListener(Hide);
+            closeButton.onClick.AddListener(Hide);
         }
     }
 }

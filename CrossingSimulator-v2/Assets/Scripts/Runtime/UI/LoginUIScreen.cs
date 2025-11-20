@@ -113,7 +113,7 @@ namespace CrossingSimulator.UI
             {
                 var message = !string.IsNullOrEmpty(envelope.message)
                     ? envelope.message
-                    : (!string.IsNullOrEmpty(response.Error) ? response.Error : "Đăng nhập thất bại, thử lại nhé.");
+                    : (!string.IsNullOrEmpty(response.Error) ? response.Error : "Login failed, please try again.");
 
                 SetControlsInteractable(true);
                 PopupService.Instance.Show(message);
@@ -124,7 +124,7 @@ namespace CrossingSimulator.UI
             loginSucceeded = true;
             AuthTokenStore.Instance.ApplyLoginResponse(lastLoginResponse);
 
-            SetFeedback("Đăng nhập thành công! Nhấn phím bất kỳ để vào game.");
+            SetFeedback("Login successful! Press any key to enter the game.");
             SetControlsInteractable(false);
 
             if (pressAnyKeyPrompt != null)
