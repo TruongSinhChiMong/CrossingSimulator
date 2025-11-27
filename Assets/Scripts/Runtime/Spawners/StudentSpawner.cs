@@ -1,43 +1,66 @@
 ﻿using UnityEngine;
+using System.Collections;
 
-/// <summary>
-/// Sinh học sinh ở mép phải, A/B xen kẽ, có giãn cách.
-/// Gắn script này vào GameObject "Spawners/StudentSpawner".
-/// </summary>
 public class StudentSpawner : MonoBehaviour
 {
-    [SerializeField] private GameObject prefabTypeA;
-    [SerializeField] private GameObject prefabTypeB;
+    [Header("Prefabs")]
+    public GameObject prefabTypeA;
+    public GameObject prefabTypeB;
 
-    [SerializeField] private int count = 6;
-    [SerializeField] private float startX = 7.5f;   // mép phải (tuỳ map)
-    [SerializeField] private float startY = -1.6f;  // cao độ lề
-    [SerializeField] private float spacing = 1.0f;  // giãn cách
-    [SerializeField] private bool startsWaiting = true;
+    [Header("Spawn Settings")]
+    [Tooltip("Tổng số học sinh spawn trong màn")]
+    public int count = 6;
 
-    [SerializeField] private Transform player; // nếu StudentController dùng khoảng cách
+    [Tooltip("Vị trí spawn (world). Chỉnh Y để dời học sinh lên/xuống.")]
+    public Vector2 spawnPos = new Vector2(3f, -1.8f);
 
-    void Start()
+    [Tooltip("Thời gian trễ ngẫu nhiên giữa mỗi học sinh (giây)")]
+    public float minDelay = 6f;
+    public float maxDelay = 15f;
+
+    [Header("UI (optional)")]
+    public SignCounter rightSignCounter;   // biển phải
+    public ProgressManager progress;       // thanh tiến độ
+
+    [Header("Optional")]
+    public PlayerController player;        // để Student biết Player (SetPlayer)
+
+    private void Start()
     {
-        float x = startX;
+        if (!prefabTypeA || !prefabTypeB)
+        {
+            Debug.LogError("[StudentSpawner] Chưa gán Prefab Type A/B.");
+            enabled = false;
+            return;
+        }
+
+        if (rightSignCounter)
+            rightSignCounter.SetTotal(count);
+
+        if (progress)
+            progress.totalStudents = count;
+
+        StartCoroutine(SpawnRoutine());
+    }
+
+    private IEnumerator SpawnRoutine()
+    {
         for (int i = 0; i < count; i++)
         {
             var prefab = (i % 2 == 0) ? prefabTypeA : prefabTypeB;
-            var go = Instantiate(prefab, new Vector3(x, startY, 0f), Quaternion.identity, transform);
+            var go = Instantiate(prefab, spawnPos, Quaternion.identity);
 
-            // truyền cấu hình ban đầu (không bắt buộc, chỉ để đồng bộ nhanh)
             var sc = go.GetComponent<StudentController>();
-            if (sc != null)
+            if (sc != null && player != null)
             {
-                // set private field startsWaiting qua reflection (đỡ phải public)
-                var fld = typeof(StudentController).GetField("startsWaiting", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                if (fld != null) fld.SetValue(sc, startsWaiting);
-
-                var pfld = typeof(StudentController).GetField("player", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                if (pfld != null && player) pfld.SetValue(sc, player);
+                sc.SetPlayer(player.transform);
             }
 
-            x += spacing;
+            if (rightSignCounter)
+                rightSignCounter.SetRemaining(count - i - 1);
+
+            float delay = Random.Range(minDelay, maxDelay);
+            yield return new WaitForSeconds(delay);
         }
     }
 }

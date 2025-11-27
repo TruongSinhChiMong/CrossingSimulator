@@ -107,5 +107,40 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8143349464552304919, guid: 4a11d772e8fe9494b81311e3e44a9507, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5383630399384043436}
   m_SourcePrefab: {fileID: 100100000, guid: 4a11d772e8fe9494b81311e3e44a9507, type: 3}
+--- !u!1 &206888407988791915 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8143349464552304919, guid: 4a11d772e8fe9494b81311e3e44a9507, type: 3}
+  m_PrefabInstance: {fileID: 8349109489606105980}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &5383630399384043436
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 206888407988791915}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3587f6c387471a46953f975afde868b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StudentRecolor
+  hair: {fileID: 0}
+  skin: {fileID: 0}
+  clothes: {fileID: 0}
+  hat: {fileID: 0}
+  fallbackWhole: {fileID: 767536153609184262}
+  randomize: 1
+  hairColor: {r: 0.25, g: 0.15, b: 0.05, a: 1}
+  skinColor: {r: 0.85, g: 0.7, b: 0.6, a: 1}
+  clothesColor: {r: 1, g: 0.55, b: 0.1, a: 1}
+  hatColor: {r: 0.5411765, g: 0.1686275, b: 0.8862746, a: 1}
+--- !u!212 &767536153609184262 stripped
+SpriteRenderer:
+  m_CorrespondingSourceObject: {fileID: 8753635143588364154, guid: 4a11d772e8fe9494b81311e3e44a9507, type: 3}
+  m_PrefabInstance: {fileID: 8349109489606105980}
+  m_PrefabAsset: {fileID: 0}
