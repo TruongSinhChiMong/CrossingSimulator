@@ -1,138 +1,86 @@
 ﻿using UnityEngine;
-using UnityEngine.InputSystem; // NEW Input System
+using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Rigidbody2D))]
-[RequireComponent(typeof(Animator))]
-[DisallowMultipleComponent]
 public class PlayerController : MonoBehaviour
 {
+    // Cho các script khác truy cập Player nếu cần
+    public static PlayerController Instance;
+
     [Header("Movement")]
-    [SerializeField] private float moveSpeed = 3.5f;
-    [SerializeField] private float acceleration = 20f;
-    [SerializeField] private float deceleration = 30f;
+    [Tooltip("Tốc độ di chuyển của Joe")]
+    public float moveSpeed = 3f;
 
-    [Header("Signals (Z/X)")]
-    [SerializeField] private float crossDuration = 0.6f;   // thời gian bật state Cross
-    [SerializeField] private float stopDuration = 0.6f;   // thời gian bật state Stop
+    [Header("Animator")]
+    [Tooltip("Tên parameter float trong Animator dùng cho tốc độ")]
+    public string pSpeed = "Speed";
 
-    // Animator params (đặt đúng tên trong Animator)
-    private static readonly int AnimSpeed = Animator.StringToHash("Speed");
-    private static readonly int AnimIsCrossing = Animator.StringToHash("IsCrossing");
-    private static readonly int AnimIsStopping = Animator.StringToHash("IsStopping");
+    Rigidbody2D rb;
+    Animator anim;
+    Vector2 move;
 
-    private Rigidbody2D rb;
-    private Animator animator;
-    private SpriteRenderer sr;
-
-    // --- NEW INPUT SYSTEM actions ---
-    private InputAction moveAction;   // trục -1..1
-    private InputAction crossAction;  // Z / gamepad south
-    private InputAction stopAction;   // X / gamepad east
-
-    private Coroutine crossRoutine, stopRoutine;
-
-    private void Awake()
+    void Awake()
     {
+        // Gán instance, không phá huỷ gì thêm cho đỡ rắc rối
+        Instance = this;
+
         rb = GetComponent<Rigidbody2D>();
-        animator = GetComponent<Animator>();
-        sr = GetComponent<SpriteRenderer>();
+        anim = GetComponent<Animator>();
 
-        // ----------------- MOVE (1D Axis) -----------------
-        moveAction = new InputAction(
-            name: "Move",
-            type: InputActionType.Value
-        );
-
-        // 1D Axis composite cho bàn phím
-        var axis = moveAction.AddCompositeBinding("1DAxis");
-        axis.With("Negative", "<Keyboard>/a");
-        axis.With("Negative", "<Keyboard>/leftArrow");
-        axis.With("Positive", "<Keyboard>/d");
-        axis.With("Positive", "<Keyboard>/rightArrow");
-
-        // Thêm gamepad (left stick X) – optional, sẽ “pick” tín hiệu mạnh hơn
-        moveAction.AddBinding("<Gamepad>/leftStick/x");
-
-        // ----------------- Z (Cross) -----------------
-        crossAction = new InputAction("Cross", InputActionType.Button);
-        crossAction.AddBinding("<Keyboard>/z");
-        crossAction.AddBinding("<Gamepad>/buttonSouth"); // A (Xbox) / Cross (PS)
-
-        // ----------------- X (Stop) ------------------
-        stopAction = new InputAction("Stop", InputActionType.Button);
-        stopAction.AddBinding("<Keyboard>/x");
-        stopAction.AddBinding("<Gamepad>/buttonEast");   // B (Xbox) / Circle (PS)
+        // Cấu hình Rigidbody2D cho game 2D, không bị rơi
+        rb.gravityScale = 0f;
+        rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
     }
 
-    private void OnEnable()
+    // Được gọi bởi PlayerInput (action Move)
+    public void OnMove(InputAction.CallbackContext ctx)
     {
-        moveAction.Enable();
-
-        crossAction.performed += OnCrossPerformed;
-        crossAction.Enable();
-
-        stopAction.performed += OnStopPerformed;
-        stopAction.Enable();
+        move = ctx.ReadValue<Vector2>();
+        // Debug tạm, sau này có thể xoá:
+        // if (ctx.performed || ctx.canceled) Debug.Log("Move: " + move);
     }
 
-    private void OnDisable()
+    // Được gọi bởi action Z
+    public void OnActionZ(InputAction.CallbackContext ctx)
     {
-        moveAction.Disable();
-
-        crossAction.performed -= OnCrossPerformed;
-        crossAction.Disable();
-
-        stopAction.performed -= OnStopPerformed;
-        stopAction.Disable();
-    }
-
-    private void FixedUpdate()
-    {
-        float inputX = moveAction.ReadValue<float>(); // -1..1 (từ 1DAxis hoặc leftStick/x)
-
-        // Nếu đang bật Stop thì khóa chuyển động ngang
-        if (animator.GetBool(AnimIsStopping))
-            inputX = 0f;
-
-        float targetVx = inputX * moveSpeed;
-        float currentVx = rb.linearVelocity.x;
-        float accel = (Mathf.Abs(targetVx) > 0.01f) ? acceleration : deceleration;
-
-        float newVx = Mathf.MoveTowards(currentVx, targetVx, accel * Time.fixedDeltaTime);
-        rb.linearVelocity = new Vector2(newVx, rb.linearVelocity.y);
-
-        // Flip sprite theo hướng di chuyển
-        if (Mathf.Abs(newVx) > 0.001f)
+        if (ctx.started)
         {
-            if (sr != null) sr.flipX = newVx < 0f;
+            Debug.Log("Z pressed");
+            // TODO: sau này gọi OrdersManager.EmitCross();
+        }
+    }
+
+    // Được gọi bởi action X
+    public void OnActionX(InputAction.CallbackContext ctx)
+    {
+        if (ctx.started)
+        {
+            Debug.Log("X pressed");
+            // TODO: sau này gọi OrdersManager.EmitStop();
+        }
+    }
+
+    void FixedUpdate()
+    {
+        // Di chuyển bằng Rigidbody2D
+        rb.linearVelocity = move * moveSpeed;
+
+        // Cập nhật Animator (Speed)
+        if (anim)
+        {
+            float speedValue = rb.linearVelocity.sqrMagnitude > 0.001f
+                ? rb.linearVelocity.magnitude
+                : 0f;
+
+            anim.SetFloat(pSpeed, speedValue);
         }
 
-        // Cập nhật Animator
-        animator.SetFloat(AnimSpeed, Mathf.Abs(newVx));
-    }
-
-    // ===================== HANDLERS =====================
-
-    private void OnCrossPerformed(InputAction.CallbackContext ctx)
-    {
-        if (!ctx.performed) return;
-        if (crossRoutine != null) StopCoroutine(crossRoutine);
-        crossRoutine = StartCoroutine(SetBoolForSeconds(AnimIsCrossing, crossDuration));
-    }
-
-    private void OnStopPerformed(InputAction.CallbackContext ctx)
-    {
-        if (!ctx.performed) return;
-        if (stopRoutine != null) StopCoroutine(stopRoutine);
-        stopRoutine = StartCoroutine(SetBoolForSeconds(AnimIsStopping, stopDuration));
-        // dừng gấp tức thời (tùy thích)
-        rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
-    }
-
-    private System.Collections.IEnumerator SetBoolForSeconds(int boolHash, float seconds)
-    {
-        animator.SetBool(boolHash, true);
-        yield return new WaitForSeconds(seconds);
-        animator.SetBool(boolHash, false);
+        // Lật sprite theo hướng ngang
+        if (move.x != 0f)
+        {
+            Vector3 scale = transform.localScale;
+            scale.x = Mathf.Sign(move.x);
+            transform.localScale = scale;
+        }
     }
 }
