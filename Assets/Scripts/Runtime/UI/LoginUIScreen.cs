@@ -19,8 +19,13 @@ namespace CrossingSimulator.UI
         [SerializeField] GameObject pressAnyKeyPrompt;
 
         [Header("Scene Flow")]
-        [SerializeField] string nextSceneName = "Map1";
+        [SerializeField] string nextSceneName = "LevelSelection";
         [SerializeField] string title = "Crossing Simulator";
+
+        [Header("Debug Options")]
+        [SerializeField] bool enableFakeLogin = true;
+        [SerializeField] string fakeLoginUsername = "test";
+        [SerializeField] string fakeLoginPassword = "test";
 
         Font runtimeFont;
         bool loginSucceeded;
@@ -89,6 +94,15 @@ namespace CrossingSimulator.UI
             SetControlsInteractable(false);
             SetFeedback("Đang đăng nhập...");
 
+            // Check for fake login
+            if (enableFakeLogin && email.Equals(fakeLoginUsername, System.StringComparison.OrdinalIgnoreCase) 
+                && password == fakeLoginPassword)
+            {
+                Debug.Log("[LoginUIScreen] Using fake login for testing");
+                OnFakeLoginSuccess();
+                return;
+            }
+
             var payload = new LoginRequest
             {
                 email = email,
@@ -99,6 +113,34 @@ namespace CrossingSimulator.UI
                 StopCoroutine(loginCoroutine);
 
             loginCoroutine = ApiService.Instance.PostJson(ApiPaths.Login, payload, OnLoginCompleted);
+        }
+
+        void OnFakeLoginSuccess()
+        {
+            isSubmitting = false;
+            loginSucceeded = true;
+
+            // Create fake login response
+            lastLoginResponse = new LoginResponse
+            {
+                idToken = "fake_token_for_testing",
+                uid = "test_user_id",
+                email = fakeLoginUsername + "@test.com",
+                displayName = "Test User",
+                refreshToken = "fake_refresh_token"
+            };
+
+            // Apply fake token if AuthTokenStore exists
+            if (AuthTokenStore.Instance != null)
+            {
+                AuthTokenStore.Instance.ApplyLoginResponse(lastLoginResponse);
+            }
+
+            SetFeedback("Login successful! (Test Mode) Press any key to enter the game.");
+            SetControlsInteractable(false);
+
+            if (pressAnyKeyPrompt != null)
+                pressAnyKeyPrompt.SetActive(true);
         }
 
         void OnLoginCompleted(ApiResponse response)
