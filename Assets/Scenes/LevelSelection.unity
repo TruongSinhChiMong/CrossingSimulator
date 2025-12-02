@@ -1601,6 +1601,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Runtime.UI.LevelSelectionManager
   levelButtons:
   - {fileID: 925768262}
+  - {fileID: 377006074}
+  - {fileID: 1886405183}
+  - {fileID: 1319595719}
+  - {fileID: 703429251}
   totalLevels: 5
 --- !u!4 &1338944845
 Transform:

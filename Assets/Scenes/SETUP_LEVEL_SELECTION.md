@@ -57,7 +57,7 @@ Cho mỗi level button:
    - Level Number Text: Kéo LevelNumberText vào
    - Block Star Sprite: Kéo `block_star.png` từ Assets/Art/Sprites/UI
    - One Star Sprite: Kéo `1_star.png`
-   - Two Star Sprite: Kéo `2_star.png`
+   - Two Star Sprite: Kéo `2_star.png`d
    - Three Star Sprite: Kéo `3_star.png`
 
 ## Bước 6: Tạo Back Button

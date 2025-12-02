@@ -54,15 +54,22 @@ namespace Runtime.UI
             
             Debug.Log($"[LevelButton] Initializing {gameObject.name} - Level {data.levelNumber}, Unlocked: {data.isUnlocked}, Stars: {data.stars}");
             
+            // Check starImage first
+            if (starImage == null)
+            {
+                Debug.LogError($"[LevelButton] {gameObject.name} is missing starImage reference!");
+                return;
+            }
+            
             // Check sprites
             if (blockStarSprite == null)
-                Debug.LogWarning($"[LevelButton] {gameObject.name} is missing blockStarSprite!");
+                Debug.LogError($"[LevelButton] {gameObject.name} is missing blockStarSprite!");
             if (oneStarSprite == null)
-                Debug.LogWarning($"[LevelButton] {gameObject.name} is missing oneStarSprite!");
+                Debug.LogError($"[LevelButton] {gameObject.name} is missing oneStarSprite!");
             if (twoStarSprite == null)
-                Debug.LogWarning($"[LevelButton] {gameObject.name} is missing twoStarSprite!");
+                Debug.LogError($"[LevelButton] {gameObject.name} is missing twoStarSprite!");
             if (threeStarSprite == null)
-                Debug.LogWarning($"[LevelButton] {gameObject.name} is missing threeStarSprite!");
+                Debug.LogError($"[LevelButton] {gameObject.name} is missing threeStarSprite!");
             
             // Set text cho cả 2 loại
             string levelText = data.levelNumber.ToString();
@@ -89,9 +96,11 @@ namespace Runtime.UI
         {
             if (starImage == null)
             {
-                Debug.LogWarning("StarImage is null on " + gameObject.name);
+                Debug.LogError($"[UpdateStarDisplay] StarImage is null on {gameObject.name}");
                 return;
             }
+            
+            Debug.Log($"[UpdateStarDisplay] {gameObject.name} - Unlocked: {levelData.isUnlocked}, Stars: {levelData.stars}");
             
             // Reset color về trắng đầy đủ
             starImage.color = Color.white;
@@ -102,10 +111,11 @@ namespace Runtime.UI
                 if (blockStarSprite != null)
                 {
                     starImage.sprite = blockStarSprite;
+                    Debug.Log($"[UpdateStarDisplay] {gameObject.name} - Set to BLOCK STAR: {blockStarSprite.name}");
                 }
                 else
                 {
-                    Debug.LogWarning("Block star sprite is missing on " + gameObject.name);
+                    Debug.LogError($"[UpdateStarDisplay] Block star sprite is missing on {gameObject.name}");
                     starImage.color = new Color(0.5f, 0.5f, 0.5f, 1f); // Màu xám nếu thiếu sprite
                 }
             }
