@@ -54,5 +54,10 @@ namespace Runtime.UI
             PlayerPrefs.Save();
             InitializeLevels();
         }
+
+        public void OpenSettings()
+        {
+            SceneManager.LoadScene("Settings");
+        }
     }
 }

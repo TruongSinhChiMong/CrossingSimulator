@@ -12,6 +12,13 @@ public class StudentController : MonoBehaviour
     public float DespawnX = -12f;          // đi tới trái màn hình thì biến mất
     public bool DestroyOnWallHit = true;   // chạm tường trái/phải thì huỷ
 
+    [Header("Safe Zone")]
+    public string safeZoneTag = "SafeZone"; // Tag của vùng an toàn
+
+    [Header("Collider")]
+    [Range(0.3f, 1f)]
+    public float colliderScale = 0.5f; // Thu nhỏ collider để va chạm gần hơn
+
     [Header("Yell (la hét)")]
     public float WaitBeforeYell = 15f;
     public float YellDuration = 15f;
@@ -28,6 +35,8 @@ public class StudentController : MonoBehaviour
     Animator anim;
     Transform player;
     bool isMoving;
+    bool hasReachedSafety = false;
+    bool isHit = false;
 
     public void SetPlayer(Transform p) => player = p;
 
@@ -36,6 +45,30 @@ public class StudentController : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
         isMoving = StartMoving;
+        AdjustCollider();
+    }
+
+    void AdjustCollider()
+    {
+        BoxCollider2D boxCol = GetComponent<BoxCollider2D>();
+        if (boxCol != null)
+        {
+            boxCol.size *= colliderScale;
+            return;
+        }
+
+        CircleCollider2D circleCol = GetComponent<CircleCollider2D>();
+        if (circleCol != null)
+        {
+            circleCol.radius *= colliderScale;
+            return;
+        }
+
+        CapsuleCollider2D capsuleCol = GetComponent<CapsuleCollider2D>();
+        if (capsuleCol != null)
+        {
+            capsuleCol.size *= colliderScale;
+        }
     }
 
     void Update()
@@ -77,5 +110,45 @@ public class StudentController : MonoBehaviour
 
         if (col.collider.CompareTag("MapCollision") || col.collider.name.Contains("Wall"))
             Destroy(gameObject);
+    }
+
+    void OnTriggerEnter2D(Collider2D col)
+    {
+        // Học sinh đến vùng an toàn
+        if (col.CompareTag(safeZoneTag) && !hasReachedSafety && !isHit)
+        {
+            hasReachedSafety = true;
+            GameManager.Instance?.OnStudentSafe();
+            Debug.Log("[Student] Reached safety!");
+        }
+
+        // Học sinh bị xe đâm
+        if (col.CompareTag("Vehicle") && !isHit)
+        {
+            isHit = true;
+            isMoving = false;
+            anim.SetBool(P_IsHit, true);
+            GameManager.Instance?.OnStudentHit();
+            Debug.Log("[Student] Got hit by vehicle!");
+
+            // Dính theo xe
+            AttachToVehicle(col.transform);
+        }
+    }
+
+    void AttachToVehicle(Transform vehicle)
+    {
+        // Tắt physics của học sinh
+        rb.linearVelocity = Vector2.zero;
+        rb.bodyType = RigidbodyType2D.Kinematic;
+
+        // Gắn học sinh làm con của xe
+        transform.SetParent(vehicle);
+
+        // Giữ vị trí tương đối (dính trên đầu xe)
+        // Có thể điều chỉnh offset nếu cần
+        Vector3 localPos = transform.localPosition;
+        localPos.z = 0;
+        transform.localPosition = localPos;
     }
 }
