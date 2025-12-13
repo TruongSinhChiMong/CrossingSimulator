@@ -1,121 +1,122 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Rigidbody2D))]
-public class PlayerController : MonoBehaviour
+[RequireComponent(typeof(Animator))]
+[DisallowMultipleComponent]
+public partial class PlayerController : MonoBehaviour
 {
     public static PlayerController Instance;
 
     [Header("Movement")]
-    public float moveSpeed = 3f;
+    public float moveSpeed = 3.5f;
+    public float acceleration = 20f;
+    public float deceleration = 30f;
 
-    [Header("Animator")]
-    public string pSpeed = "Speed";
-    public string pIdle = "IsIdle";
-    public string pWalk = "IsWalking";
+    [Header("Signals (Z/X)")]
+    [SerializeField] private float crossDuration = 0.6f;
+    [SerializeField] private float stopDuration = 0.6f;
 
-    [Header("Sorting")]
-    public int baseSortingOrder = 10; // Order cơ bản
+    [Header("Hit Reaction (bị xe tông)")]
+    [SerializeField] private float knockbackForce = 5f;
+    [SerializeField] private float stunDuration = 1.5f;
 
+    // Animator params
+    private static readonly int AnimSpeed = Animator.StringToHash("Speed");
+    private static readonly int AnimIsCrossing = Animator.StringToHash("IsCrossing");
+    private static readonly int AnimIsStopping = Animator.StringToHash("IsStopping");
+
+    // references
     private Rigidbody2D rb;
-    private Animator anim;
-    private SpriteRenderer spriteRenderer;
-    private Vector2 moveInput;
-    private bool isWalking;
-    private bool isBlockedByVehicle = false;
+    private Animator animator;
+    private SpriteRenderer sr;
 
-    void Awake()
+    // Input
+    private InputAction moveAction;
+    private InputAction crossAction;
+    private InputAction stopAction;
+
+    // coroutines
+    private Coroutine crossRoutine;
+    private Coroutine stopRoutine;
+
+    // state
+    private bool isStunned = false;
+
+    // ================= CORE INIT =================
+
+    private void Awake()
     {
         Instance = this;
+
         rb = GetComponent<Rigidbody2D>();
-        anim = GetComponent<Animator>();
-        spriteRenderer = GetComponent<SpriteRenderer>();
+        animator = GetComponent<Animator>();
+        sr = GetComponent<SpriteRenderer>();
 
-        if (rb != null)
+        SetupInputActions();
+    }
+
+    private void OnEnable()
+    {
+        moveAction?.Enable();
+
+        if (crossAction != null)
         {
-            rb.gravityScale = 0f;
-            rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+            crossAction.performed += OnCrossPerformed;
+            crossAction.Enable();
+        }
+
+        if (stopAction != null)
+        {
+            stopAction.performed += OnStopPerformed;
+            stopAction.Enable();
         }
     }
 
-    void Update()
+    private void OnDisable()
     {
-        // Cập nhật sorting order dựa trên vị trí Y
-        // Object có Y thấp hơn (ở dưới) sẽ có order cao hơn (hiển thị trước)
-        if (spriteRenderer != null)
+        moveAction?.Disable();
+
+        if (crossAction != null)
         {
-            spriteRenderer.sortingOrder = baseSortingOrder - Mathf.RoundToInt(transform.position.y * 10);
+            crossAction.performed -= OnCrossPerformed;
+            crossAction.Disable();
+        }
+
+        if (stopAction != null)
+        {
+            stopAction.performed -= OnStopPerformed;
+            stopAction.Disable();
         }
     }
 
-    // Called by PlayerInput component (Send Messages / Broadcast Messages behavior)
-    public void OnMove(InputValue value)
+    private void SetupInputActions()
     {
-        moveInput = value.Get<Vector2>();
-        Debug.Log($"OnMove called: {moveInput}");
+        // ------- MOVE -------
+        moveAction = new InputAction(name: "Move", type: InputActionType.Value);
+        var axis = moveAction.AddCompositeBinding("1DAxis");
+        axis.With("Negative", "<Keyboard>/a");
+        axis.With("Negative", "<Keyboard>/leftArrow");
+        axis.With("Positive", "<Keyboard>/d");
+        axis.With("Positive", "<Keyboard>/rightArrow");
+        moveAction.AddBinding("<Gamepad>/leftStick/x");
+
+        // ------- Z – Cross -------
+        crossAction = new InputAction("Cross", InputActionType.Button);
+        crossAction.AddBinding("<Keyboard>/z");
+        crossAction.AddBinding("<Gamepad>/buttonSouth");
+
+        // ------- X – Stop -------
+        stopAction = new InputAction("Stop", InputActionType.Button);
+        stopAction.AddBinding("<Keyboard>/x");
+        stopAction.AddBinding("<Gamepad>/buttonEast");
     }
 
-    // Alternative: Called when using Invoke Unity Events behavior
-    public void OnMoveCallback(InputAction.CallbackContext context)
+    protected IEnumerator SetBoolForSeconds(int boolHash, float seconds)
     {
-        moveInput = context.ReadValue<Vector2>();
-        Debug.Log($"OnMoveCallback called: {moveInput}");
-    }
-
-    void FixedUpdate()
-    {
-        if (rb == null) return;
-
-        // Dừng lại nếu đang bị xe chặn
-        if (isBlockedByVehicle)
-        {
-            rb.linearVelocity = Vector2.zero;
-            UpdateAnimator(false);
-            return;
-        }
-
-        // Apply movement
-        rb.linearVelocity = moveInput * moveSpeed;
-
-        // Check if walking
-        isWalking = rb.linearVelocity.sqrMagnitude > 0.001f;
-
-        UpdateAnimator(isWalking);
-
-        // Flip sprite
-        if (moveInput.x != 0f)
-        {
-            Vector3 scale = transform.localScale;
-            scale.x = Mathf.Abs(scale.x) * Mathf.Sign(moveInput.x);
-            transform.localScale = scale;
-        }
-    }
-
-    void UpdateAnimator(bool walking)
-    {
-        if (anim == null) return;
-
-        float speedValue = walking ? rb.linearVelocity.magnitude : 0f;
-        anim.SetFloat(pSpeed, speedValue);
-        anim.SetBool(pIdle, !walking);
-        anim.SetBool(pWalk, walking);
-    }
-
-    void OnCollisionEnter2D(Collision2D col)
-    {
-        // Player chạm xe → dừng lại
-        if (col.collider.CompareTag("Vehicle"))
-        {
-            isBlockedByVehicle = true;
-        }
-    }
-
-    void OnCollisionExit2D(Collision2D col)
-    {
-        // Xe đi qua → player có thể di chuyển lại
-        if (col.collider.CompareTag("Vehicle"))
-        {
-            isBlockedByVehicle = false;
-        }
+        animator.SetBool(boolHash, true);
+        yield return new WaitForSeconds(seconds);
+        animator.SetBool(boolHash, false);
     }
 }

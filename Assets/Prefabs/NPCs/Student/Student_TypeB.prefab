@@ -8,6 +8,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1976322480711407142, guid: 4a11d772e8fe9494b81311e3e44a9507, type: 3}
+      propertyPath: arrowIcon
+      value: 
+      objectReference: {fileID: 5907979146510853736, guid: 8c569a1321fd2734fa0f3408bdf0c9c9, type: 3}
     - target: {fileID: 2533091907539451098, guid: 4a11d772e8fe9494b81311e3e44a9507, type: 3}
       propertyPath: m_Size.x
       value: 0.4
@@ -135,10 +139,6 @@ MonoBehaviour:
   hat: {fileID: 0}
   fallbackWhole: {fileID: 767536153609184262}
   randomize: 1
-  hairColor: {r: 0.25, g: 0.15, b: 0.05, a: 1}
-  skinColor: {r: 0.85, g: 0.7, b: 0.6, a: 1}
-  clothesColor: {r: 1, g: 0.55, b: 0.1, a: 1}
-  hatColor: {r: 0.5411765, g: 0.1686275, b: 0.8862746, a: 1}
 --- !u!212 &767536153609184262 stripped
 SpriteRenderer:
   m_CorrespondingSourceObject: {fileID: 8753635143588364154, guid: 4a11d772e8fe9494b81311e3e44a9507, type: 3}
