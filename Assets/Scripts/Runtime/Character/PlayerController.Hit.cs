@@ -1,56 +1,48 @@
-﻿using System.Collections;
-using UnityEngine;
+﻿using UnityEngine;
 
 public partial class PlayerController : MonoBehaviour
 {
-    /// <summary>
-    /// Coroutine choáng – khóa điều khiển trong thời gian stunDuration.
-    /// </summary>
-    private IEnumerator StunCoroutine(float duration)
+    [Header("Hit / Knockback Settings")]
+    [SerializeField] private string vehicleTag = "Vehicle";
+    [Tooltip("Khoảng đẩy player ra khỏi xe khi bị tông.")]
+    [SerializeField] private float knockbackDistance = 0.7f;
+
+    private static readonly int AnimHit = Animator.StringToHash("Hit");
+
+    private void OnTriggerEnter2D(Collider2D other)
     {
-        isStunned = true;
-        yield return new WaitForSeconds(duration);
-        isStunned = false;
+        if (!other.CompareTag(vehicleTag))
+            return;
+
+        HandleHitByVehicle(other);
     }
 
-    // ======= API cho VehicleController gọi nếu cần =======
-
-    public void HitByVehicle()
+    private void HandleHitByVehicle(Collider2D vehicleCollider)
     {
-        HitByVehicle(Vector2.left, knockbackForce, stunDuration);
-    }
-
-    public void HitByVehicle(Vector2 direction)
-    {
-        HitByVehicle(direction, knockbackForce, stunDuration);
-    }
-
-    public void HitByVehicle(Vector2 direction, float force)
-    {
-        HitByVehicle(direction, force, stunDuration);
-    }
-
-    public void HitByVehicle(Vector2 direction, float force, float stunTime)
-    {
-        if (direction == Vector2.zero)
-            direction = Vector2.left;
-
-        rb.linearVelocity = Vector2.zero;
-        rb.AddForce(direction.normalized * force, ForceMode2D.Impulse);
-
-        if (gameObject.activeInHierarchy)
-            StartCoroutine(StunCoroutine(stunTime));
-    }
-
-    /// <summary>
-    /// Va chạm trực tiếp với collider tag "Vehicle".
-    /// </summary>
-    private void OnCollisionEnter2D(Collision2D col)
-    {
-        if (col.collider.CompareTag("Vehicle"))
+        // 1) Gọi animation Hit
+        var animator = GetComponent<Animator>();
+        if (animator != null)
         {
-            Vector2 dir = (transform.position - col.transform.position).normalized;
-            HitByVehicle(dir, knockbackForce, stunDuration);
+            animator.SetTrigger(AnimHit);
         }
+
+        // 2) Đẩy player theo PHƯƠNG NGANG (X) thôi
+        var rb = GetComponent<Rigidbody2D>();
+        if (rb != null)
+        {
+            float playerX = rb.position.x;
+            float carX = vehicleCollider.bounds.center.x;
+
+            // Nếu xe bên trái → đẩy player sang phải, và ngược lại
+            float directionX = (playerX >= carX) ? 1f : -1f;
+
+            Vector2 knockDir = new Vector2(directionX, 0f); // chỉ ngang
+            Vector2 newPos = rb.position + knockDir * knockbackDistance;
+
+            rb.position = newPos;
+        }
+
+        // 3) Sau này nếu cần báo GameManager thì gọi ở đây
+        // GameManager.Instance?.OnPlayerHit();
     }
 }

@@ -34,8 +34,13 @@ public class StudentSpawner : MonoBehaviour
     [SerializeField] private Transform runtimeParent;
 
     [Header("UI / World UI")]
-    [SerializeField] private SignCounter signCounter;        // biển bên phải: số còn lại
-    [SerializeField] private ProgressBarWorld progressBar;   // thanh tiến độ sprite
+    [Tooltip("Biển bên phải: số học sinh CÒN LẠI (chưa safe, chưa chết).")]
+    [SerializeField] private SignNumberSpriteFixed rightSign;
+    [Tooltip("Biển bên trái: số học sinh ĐÃ QUA AN TOÀN.")]
+    [SerializeField] private SignNumberSpriteFixed leftSign;
+
+    [SerializeField] private ProgressBarWorld progressBar;
+
 
     private int spawnedCount;
     private int succeededCount;
@@ -165,20 +170,22 @@ public class StudentSpawner : MonoBehaviour
 
     private void UpdateUI()
     {
+        // 1) Biển bên phải: số học sinh CÒN LẠI (chưa safe, chưa chết)
         int resolved = succeededCount + deadCount;
         int remaining = Mathf.Max(0, totalStudents - resolved);
 
-        if (signCounter != null)
-        {
-            signCounter.SetRemaining(remaining);
-        }
+        if (rightSign != null)
+            rightSign.SetNumber(remaining);
 
+        // 2) Biển bên trái: số học sinh ĐÃ QUA AN TOÀN
+        if (leftSign != null)
+            leftSign.SetNumber(succeededCount);
+
+        // 3) Thanh tiến độ: chỉ dựa trên số học sinh safe
         if (progressBar != null)
-        {
-            // chỉ các em qua AN TOÀN mới làm tiến độ tăng
             progressBar.SetProgress(succeededCount, totalStudents);
-        }
     }
+
 
     public int TotalStudents => totalStudents;
     public int SucceededStudents => succeededCount;
