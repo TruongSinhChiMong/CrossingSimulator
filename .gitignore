@@ -1,0 +1,103 @@
+# ===============================
+# Unity .gitignore (CrossingSimulator)
+# ===============================
+
+# --- Unity generated/cache ---
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+MemoryCaptures/
+Recordings/
+SysInfo.txt
+*.stacktrace
+
+# --- OS junk files ---
+.DS_Store
+*_MACOSX/
+Thumbs.db
+desktop.ini
+
+# --- IDE / project files (auto-generated) ---
+# General / MSBuild
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.bak
+*.orig
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# Visual Studio
+.vs/
+
+# VS Code (ignore unless team commits workspace settings)
+.vscode/
+
+# --- Platform-specific build systems ---
+# Android / Gradle
+.gradle/
+*/build/
+*.apk
+*.aab
+*.keystore
+.keystore
+*.jks
+**/*.gradle
+**/gradle-wrapper.jar
+**/local.properties
+
+# iOS / Xcode
+DerivedData/
+*.xcworkspace/
+*.xcuserdatad/
+*.xcuserstate
+*.xcodeproj/project.xcworkspace/
+*.xcodeproj/xcuserdata/
+
+# --- Optional Unity data (uncomment to ignore baked data) ---
+# Assets/**/OcclusionCullingData.asset
+# Assets/**/LightingData.asset
+# Assets/**/Lightmap-*.exr
+# Assets/**/Lightmap-*.png
+# Assets/**/ReflectionProbe-*.exr
+
+# --- Asset Store tools (optional) ---
+# Assets/AssetStoreTools*
+
+# --- Keep critical Unity config & metadata tracked ---
+!Assets/**/*.meta
+!ProjectSettings/ProjectVersion.txt
+!ProjectSettings/*.asset
+!Packages/manifest.json
+!Packages/packages-lock.json
+
+# --- Project-specific keep rules (CrossingSimulator) ---
+# Keep assets and our agreed folder structure under version control
+!Assets/**
+!Assets/Art/**
+!Assets/Animations/**
+!Assets/Prefabs/**
+!Assets/Scenes/**
+!Assets/Scripts/**
+!Assets/Resources/**
+!Assets/External/**
+!Assets/AddressableAssetsData/**
+!Assets/StreamingAssets/**
+

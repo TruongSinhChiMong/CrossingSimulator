@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 4848921623dc12b4cabef24d072742eb
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - prefabTypeA: {fileID: 8263119867703610943, guid: 8467607fea3130e429926a0efd4c6656, type: 3}
+  - prefabTypeB: {fileID: 206888407988791915, guid: 0d462846d189cc44f8ef40ad81f7aec4, type: 3}
+  - rightSignCounter: {instanceID: 0}
+  - progress: {instanceID: 0}
+  - player: {instanceID: 0}
+  - runtimeParent: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
