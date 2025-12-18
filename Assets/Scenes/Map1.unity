@@ -208,7 +208,7 @@ GameObject:
   - component: {fileID: 98034238}
   - component: {fileID: 98034240}
   - component: {fileID: 98034239}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Content
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -224,7 +224,7 @@ RectTransform:
   m_GameObject: {fileID: 98034237}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 722234770}
@@ -504,8 +504,8 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 1456024599
-  m_SortingLayer: 5
+  m_SortingLayerID: 357237293
+  m_SortingLayer: 2
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: c153ceb4a3bbe454da2220ce11518670, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -712,7 +712,7 @@ GameObject:
   m_Layer: 0
   m_Name: Lane1_Right
   m_TagString: Untagged
-  m_Icon: {fileID: -5938655980376293919, guid: 0000000000000000d000000000000000, type: 0}
+  m_Icon: {fileID: 6519382022992737161, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -725,7 +725,7 @@ Transform:
   m_GameObject: {fileID: 442403003}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 3.51, y: -3.79, z: 0}
+  m_LocalPosition: {x: 1, y: 0.62, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1087,7 +1087,7 @@ GameObject:
   - component: {fileID: 623293393}
   - component: {fileID: 623293395}
   - component: {fileID: 623293394}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Star1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1133,7 +1133,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: -1479170257946794613, guid: 71efab65ad0da9146a55748782922b4b, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1226,7 +1226,7 @@ GameObject:
   - component: {fileID: 685282260}
   - component: {fileID: 685282259}
   - component: {fileID: 685282258}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: RestartButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1378,7 +1378,7 @@ GameObject:
   - component: {fileID: 722234770}
   - component: {fileID: 722234772}
   - component: {fileID: 722234771}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Title
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1514,7 +1514,7 @@ GameObject:
   - component: {fileID: 792486568}
   - component: {fileID: 792486570}
   - component: {fileID: 792486569}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Score
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1560,7 +1560,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "0/6 h\u1ECDc sinh an to\xE0n"
+  m_text: "H\u1ECDc sinh an to\xE0n"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1681,7 +1681,7 @@ GameObject:
   - component: {fileID: 971058025}
   - component: {fileID: 971058027}
   - component: {fileID: 971058026}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Text
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1885,7 +1885,7 @@ Canvas:
   m_VertexColorAlwaysGammaSpace: 0
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
-  m_SortingLayerID: 0
+  m_SortingLayerID: 1456024599
   m_SortingOrder: 100
   m_TargetDisplay: 0
 --- !u!224 &1005672929
@@ -1953,7 +1953,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e1cd76110efe342e7953a84421dfc514, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCommandZone
-  zoneSize: {x: 4, y: 0.5}
+  zoneSize: {x: 1.2, y: 0.5}
   studentTag: Student
 --- !u!61 &1194562613
 BoxCollider2D:
@@ -1999,7 +1999,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 4, y: 0.5}
+  m_Size: {x: 1.2, y: 0.5}
   m_EdgeRadius: 0
 --- !u!1 &1232784656
 GameObject:
@@ -2091,7 +2091,7 @@ GameObject:
   - component: {fileID: 1233977123}
   - component: {fileID: 1233977125}
   - component: {fileID: 1233977124}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Star2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2137,7 +2137,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: -1479170257946794613, guid: 71efab65ad0da9146a55748782922b4b, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -2186,6 +2186,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VehicleSpawner
   vehiclePrefabs:
   - {fileID: 2980718948654116295, guid: 0c610f70161824d549ee9cf5867aa16e, type: 3}
+  - {fileID: 2980718948654116295, guid: d10534a4ccd775f4dbafc9dfbf73b1f6, type: 3}
+  - {fileID: 2980718948654116295, guid: b0f7ad07ec5fcbf42a79fe781cd77c87, type: 3}
+  - {fileID: 2980718948654116295, guid: de1edfd24e7acd246824586c645e8528, type: 3}
+  - {fileID: 2980718948654116295, guid: 7e9ef8490d9d4b84aaa3ced26d4816bd, type: 3}
+  - {fileID: 2980718948654116295, guid: 557b9b6254309b844834466cd50f5491, type: 3}
+  - {fileID: 2980718948654116295, guid: 350ea444c4797d346ab3c984beff4f6c, type: 3}
+  - {fileID: 2980718948654116295, guid: 4602161c65cb30c4fa6d378fb3ab4d76, type: 3}
+  - {fileID: 2980718948654116295, guid: 18a1be51fc2c32c45b598b9443cb8a29, type: 3}
+  - {fileID: 2980718948654116295, guid: 7ce94094ea1333c44a3514e85cec0184, type: 3}
   lanes:
   - spawnPoint: {fileID: 442403004}
     moveDown: 1
@@ -2258,7 +2267,7 @@ Transform:
   m_GameObject: {fileID: 1347267047}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.12, y: 0.62, z: 0}
+  m_LocalPosition: {x: -1, y: 0.62, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2276,7 +2285,7 @@ GameObject:
   - component: {fileID: 1418906936}
   - component: {fileID: 1418906935}
   - component: {fileID: 1418906934}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: NextLevelButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2566,8 +2575,8 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 1456024599
-  m_SortingLayer: 5
+  m_SortingLayerID: 357237293
+  m_SortingLayer: 2
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: c153ceb4a3bbe454da2220ce11518670, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -2605,7 +2614,7 @@ Transform:
   m_GameObject: {fileID: 1661601999}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2.49, y: -3.79, z: 0}
+  m_LocalPosition: {x: 0, y: 0.62, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2700,7 +2709,7 @@ GameObject:
   - component: {fileID: 1679296166}
   - component: {fileID: 1679296168}
   - component: {fileID: 1679296167}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Text
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2836,7 +2845,7 @@ GameObject:
   - component: {fileID: 1696354300}
   - component: {fileID: 1696354302}
   - component: {fileID: 1696354301}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Text
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2970,7 +2979,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1766048906}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Stars
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3041,7 +3050,7 @@ GameObject:
   - component: {fileID: 1837490458}
   - component: {fileID: 1837490460}
   - component: {fileID: 1837490459}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Star3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3087,7 +3096,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: -1479170257946794613, guid: 71efab65ad0da9146a55748782922b4b, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -3266,8 +3275,8 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 1456024599
-  m_SortingLayer: 5
+  m_SortingLayerID: 1247185247
+  m_SortingLayer: 4
   m_SortingOrder: 100
   m_Sprite: {fileID: 21300000, guid: 75feb72c0f08d63478ddfa7c8fc8a32a, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -3340,7 +3349,7 @@ GameObject:
   - component: {fileID: 1961303415}
   - component: {fileID: 1961303414}
   - component: {fileID: 1961303413}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: MenuButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
