@@ -3,21 +3,21 @@ using UnityEngine;
 
 /// <summary>
 /// Zone xung quanh Player. Chỉ những Student trong zone này mới nghe lệnh Stop/Cross.
-/// Attach vào Player hoặc child object có CircleCollider2D (trigger).
+/// Attach vào Player hoặc child object có BoxCollider2D (trigger).
 /// </summary>
-[RequireComponent(typeof(CircleCollider2D))]
+[RequireComponent(typeof(BoxCollider2D))]
 public class PlayerCommandZone : MonoBehaviour
 {
     public static PlayerCommandZone Instance { get; private set; }
 
     [Header("Zone Settings")]
-    [Tooltip("Bán kính vùng ảnh hưởng của lệnh")]
-    [SerializeField] private float zoneRadius = 3f;
+    [Tooltip("Kích thước vùng ảnh hưởng của lệnh (width x height)")]
+    [SerializeField] private Vector2 zoneSize = new Vector2(6f, 6f);
 
     [Header("Tags")]
     [SerializeField] private string studentTag = "Student";
 
-    private CircleCollider2D zoneCollider;
+    private BoxCollider2D zoneCollider;
     private readonly HashSet<StudentController> studentsInZone = new HashSet<StudentController>();
 
     private void Awake()
@@ -29,19 +29,17 @@ public class PlayerCommandZone : MonoBehaviour
         }
         Instance = this;
 
-        zoneCollider = GetComponent<CircleCollider2D>();
+        zoneCollider = GetComponent<BoxCollider2D>();
         zoneCollider.isTrigger = true;
-        zoneCollider.radius = zoneRadius;
+        zoneCollider.size = zoneSize;
     }
 
     private void OnValidate()
     {
-        // Cập nhật radius khi thay đổi trong Inspector
-        if (zoneCollider == null)
-            zoneCollider = GetComponent<CircleCollider2D>();
-        
-        if (zoneCollider != null)
-            zoneCollider.radius = zoneRadius;
+        // Cập nhật size khi thay đổi trong Inspector
+        var collider = GetComponent<BoxCollider2D>();
+        if (collider != null)
+            collider.size = zoneSize;
     }
 
     private void OnTriggerEnter2D(Collider2D other)
@@ -98,6 +96,6 @@ public class PlayerCommandZone : MonoBehaviour
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = new Color(0f, 1f, 0f, 0.3f);
-        Gizmos.DrawWireSphere(transform.position, zoneRadius);
+        Gizmos.DrawWireCube(transform.position, zoneSize);
     }
 }
