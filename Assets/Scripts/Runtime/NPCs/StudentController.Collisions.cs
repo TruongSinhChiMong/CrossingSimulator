@@ -27,6 +27,11 @@ public partial class StudentController : MonoBehaviour
         // Đi vào CrossingZone (vùng giữa spawn và safe)
         if (!string.IsNullOrEmpty(crossingZoneTag) && other.CompareTag(crossingZoneTag))
         {
+            // Chỉ báo spawner nếu chưa vào crossing zone trước đó
+            if (!isInCrossingZone && spawner != null)
+            {
+                spawner.NotifyStudentEnteredCrossing(this);
+            }
             isInCrossingZone = true;
             return;
         }

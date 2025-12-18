@@ -49,6 +49,7 @@ public class StudentSpawner : MonoBehaviour
     private int spawnedCount;
     private int succeededCount;
     private int deadCount;
+    private int crossingCount; // số student đang băng qua đường (đã vào crossing zone nhưng chưa safe/chết)
 
     // danh sách học sinh còn đang xếp hàng chờ bên phải
     private readonly List<StudentController> waitingStudents = new List<StudentController>();
@@ -58,6 +59,7 @@ public class StudentSpawner : MonoBehaviour
         spawnedCount = 0;
         succeededCount = 0;
         deadCount = 0;
+        crossingCount = 0;
 
         UpdateUI();
         StartCoroutine(SpawnRoutine());
@@ -149,17 +151,9 @@ public class StudentSpawner : MonoBehaviour
             waitingStudents[i].UpdateQueueWaitPoint(newWait);
         }
 
-        // Cập nhật UI ngay khi student rời hàng (số còn chờ giảm)
-        UpdateWaitingUI();
-    }
-
-    /// <summary>
-    /// Cập nhật số học sinh đang chờ trong hàng (biển bên phải).
-    /// </summary>
-    private void UpdateWaitingUI()
-    {
-        if (rightSign != null)
-            rightSign.SetNumber(waitingStudents.Count);
+        // KHÔNG cập nhật UI ở đây nữa!
+        // UI sẽ được cập nhật khi student thực sự qua safe zone hoặc chết
+        // Điều này tránh việc số bị nhảy lung tung
     }
 
     /// <summary>
@@ -171,8 +165,21 @@ public class StudentSpawner : MonoBehaviour
         return waitingStudents.Count > 0 && waitingStudents[0] == student;
     }
 
+    /// <summary>
+    /// Gọi khi student vừa bước vào CrossingZone.
+    /// Trừ số bên cột phải ngay lập tức.
+    /// </summary>
+    internal void NotifyStudentEnteredCrossing(StudentController student)
+    {
+        crossingCount++;
+        UpdateUI();
+        Debug.Log($"[StudentSpawner] Student entered crossing zone. crossingCount={crossingCount}");
+    }
+
     internal void NotifyStudentSucceeded(StudentController student)
     {
+        // Student đã qua safe zone, chuyển từ crossing sang succeeded
+        crossingCount = Mathf.Max(0, crossingCount - 1);
         succeededCount++;
         UpdateUI();
 
@@ -184,6 +191,8 @@ public class StudentSpawner : MonoBehaviour
 
     internal void NotifyStudentDied(StudentController student)
     {
+        // Student chết, chuyển từ crossing sang dead
+        crossingCount = Mathf.Max(0, crossingCount - 1);
         deadCount++;
         UpdateUI();
 
@@ -195,9 +204,12 @@ public class StudentSpawner : MonoBehaviour
 
     private void UpdateUI()
     {
-        // 1) Biển bên phải: số học sinh CÒN LẠI (chưa safe, chưa chết)
-        int resolved = succeededCount + deadCount;
-        int remaining = Mathf.Max(0, totalStudents - resolved);
+        // 1) Biển bên phải: số học sinh CÒN CHỜ (chưa vào crossing zone)
+        // = tổng - (đang crossing + đã safe + đã chết)
+        int processed = crossingCount + succeededCount + deadCount;
+        int remaining = Mathf.Max(0, totalStudents - processed);
+
+        Debug.Log($"[StudentSpawner] UpdateUI: total={totalStudents}, crossing={crossingCount}, succeeded={succeededCount}, dead={deadCount}, remaining={remaining}");
 
         if (rightSign != null)
             rightSign.SetNumber(remaining);

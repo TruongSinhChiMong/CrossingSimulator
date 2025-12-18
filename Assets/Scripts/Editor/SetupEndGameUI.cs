@@ -28,7 +28,7 @@ public static class SetupEndGameUI
 
         var canvas = canvasGO.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 100; // Hiển thị trên cùng
+        canvas.sortingOrder = 1000; // Hiển thị trên cùng (cao hơn PopupService = 999)
 
         var scaler = canvasGO.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -100,6 +100,8 @@ public static class SetupEndGameUI
         // 10) Assign references qua SerializedObject
         var so = new SerializedObject(endGameUI);
         so.FindProperty("panel").objectReferenceValue = panelGO;
+        so.FindProperty("endGameCanvas").objectReferenceValue = canvas;
+        so.FindProperty("canvasSortingOrder").intValue = 1000;
         so.FindProperty("titleText").objectReferenceValue = titleText;
         so.FindProperty("star1").objectReferenceValue = star1;
         so.FindProperty("star2").objectReferenceValue = star2;

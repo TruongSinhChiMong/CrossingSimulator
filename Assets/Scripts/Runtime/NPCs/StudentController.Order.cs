@@ -24,6 +24,10 @@ public partial class StudentController : MonoBehaviour
         if (!reachedWaitPoint)
             return;
 
+        // Chỉ nghe lệnh nếu đang trong PlayerCommandZone
+        if (!IsInPlayerCommandZone())
+            return;
+
         isCrossing = true;
         isStopped = false;
 
@@ -44,6 +48,8 @@ public partial class StudentController : MonoBehaviour
             // Speed/Idle/Walk được điều khiển bởi currentVelocity
             animator.ResetTrigger(Animator.StringToHash("Yell"));
         }
+
+        Debug.Log($"[StudentController] {gameObject.name} received CROSS order");
     }
 
     private void HandleStopOrder()
@@ -60,6 +66,10 @@ public partial class StudentController : MonoBehaviour
         if (!isInCrossingZone)
             return;
 
+        // Chỉ nghe lệnh nếu đang trong PlayerCommandZone
+        if (!IsInPlayerCommandZone())
+            return;
+
         isStopped = true;
         isCrossing = false;
         currentVelocity = Vector2.zero;
@@ -68,5 +78,20 @@ public partial class StudentController : MonoBehaviour
 
         // Animation đứng yên (không Yell)
         UpdateAnimatorByVelocity();
+
+        Debug.Log($"[StudentController] {gameObject.name} received STOP order");
+    }
+
+    /// <summary>
+    /// Kiểm tra student có đang trong vùng ảnh hưởng của Player không.
+    /// </summary>
+    private bool IsInPlayerCommandZone()
+    {
+        if (PlayerCommandZone.Instance == null)
+        {
+            // Nếu không có PlayerCommandZone, cho phép nghe lệnh (backward compatible)
+            return true;
+        }
+        return PlayerCommandZone.Instance.IsStudentInZone(this);
     }
 }
