@@ -36,10 +36,20 @@ public partial class StudentController : MonoBehaviour
             return;
 
         hasReportedResult = true;
+        Debug.Log($"[StudentController] {gameObject.name} reached safe zone! Notifying spawner...");
 
         if (spawner != null)
         {
             spawner.NotifyStudentSucceeded(this);
+        }
+        else
+        {
+            Debug.LogWarning($"[StudentController] {gameObject.name} has no spawner reference! Cannot notify success.");
+            // Fallback: gọi trực tiếp GameManager nếu không có spawner
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.OnStudentSafe();
+            }
         }
     }
 
@@ -103,6 +113,15 @@ public partial class StudentController : MonoBehaviour
         if (spawner != null)
         {
             spawner.NotifyStudentDied(this);
+        }
+        else
+        {
+            Debug.LogWarning($"[StudentController] {gameObject.name} has no spawner reference! Cannot notify death.");
+            // Fallback: gọi trực tiếp GameManager nếu không có spawner
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.OnStudentHit();
+            }
         }
     }
 }

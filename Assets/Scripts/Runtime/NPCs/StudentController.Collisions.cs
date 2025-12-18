@@ -46,6 +46,14 @@ public partial class StudentController : MonoBehaviour
         if (!string.IsNullOrEmpty(crossingZoneTag) && other.CompareTag(crossingZoneTag))
         {
             isInCrossingZone = false;
+            
+            // Nếu student rời CrossingZone về phía bên trái (đã qua đường thành công)
+            // và chưa báo kết quả, thì coi như đã safe
+            if (isCrossing && transform.position.x < other.bounds.center.x)
+            {
+                Debug.Log($"[StudentController] {gameObject.name} exited CrossingZone to the left - marking as safe");
+                HandleReachedSafeZone(null);
+            }
             return;
         }
     }

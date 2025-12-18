@@ -40,9 +40,6 @@ public class EndGameUI : MonoBehaviour
 
     void Awake()
     {
-        if (panel != null)
-            panel.SetActive(false);
-
         // Tự động tìm Canvas nếu chưa assign
         if (endGameCanvas == null)
         {
@@ -53,6 +50,22 @@ public class EndGameUI : MonoBehaviour
 
         // Setup Canvas để đảm bảo hiển thị trên cùng
         SetupCanvas();
+
+        // Ẩn panel bằng CanvasGroup thay vì SetActive
+        // Điều này đảm bảo panel vẫn active và có thể Show được
+        if (panel != null)
+        {
+            // Đảm bảo panel LUÔN active
+            panel.SetActive(true);
+            
+            // Ẩn bằng CanvasGroup
+            if (canvasGroup != null)
+            {
+                canvasGroup.alpha = 0f;
+                canvasGroup.interactable = false;
+                canvasGroup.blocksRaycasts = false;
+            }
+        }
 
         // Setup button listeners
         if (restartButton != null)
@@ -105,27 +118,69 @@ public class EndGameUI : MonoBehaviour
             Debug.Log("[EndGameUI] Created EventSystem");
         }
     }
+    
+    /// <summary>
+    /// Active tất cả parent từ root xuống để đảm bảo child có thể active được
+    /// </summary>
+    void ActivateAllParents(Transform child)
+    {
+        // Thu thập tất cả parent vào list
+        var parents = new System.Collections.Generic.List<GameObject>();
+        Transform current = child.parent;
+        while (current != null)
+        {
+            parents.Add(current.gameObject);
+            current = current.parent;
+        }
+        
+        // Active từ root xuống (đảo ngược list)
+        for (int i = parents.Count - 1; i >= 0; i--)
+        {
+            if (!parents[i].activeSelf)
+            {
+                Debug.LogWarning($"[EndGameUI] Activating parent: {parents[i].name}");
+                parents[i].SetActive(true);
+            }
+        }
+    }
 
     public void Show(bool isWin, int stars, int safeCount, int totalCount)
     {
-        if (panel == null) return;
+        Debug.Log($"[EndGameUI] Show called - isWin: {isWin}, stars: {stars}");
+        
+        if (panel == null)
+        {
+            Debug.LogError("[EndGameUI] panel is NULL!");
+            return;
+        }
 
+        // Đảm bảo panel và tất cả parent đều active
+        ActivateAllParents(panel.transform);
         panel.SetActive(true);
 
-        // Đảm bảo Canvas sorting order cao nhất khi show
+        // Đảm bảo Canvas được enable và có sorting order cao
         if (endGameCanvas != null)
         {
+            endGameCanvas.enabled = true;
             endGameCanvas.overrideSorting = true;
             endGameCanvas.sortingOrder = canvasSortingOrder;
         }
 
-        // Đảm bảo CanvasGroup cho phép tương tác
-        if (canvasGroup != null)
+        // HIỆN PANEL bằng CanvasGroup (đây là cách chính để show)
+        if (canvasGroup == null)
         {
-            canvasGroup.interactable = true;
-            canvasGroup.blocksRaycasts = true;
-            canvasGroup.alpha = 1f;
+            canvasGroup = panel.GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+            {
+                canvasGroup = panel.AddComponent<CanvasGroup>();
+            }
         }
+        
+        canvasGroup.alpha = 1f;
+        canvasGroup.interactable = true;
+        canvasGroup.blocksRaycasts = true;
+        
+        Debug.Log($"[EndGameUI] CanvasGroup set - alpha: {canvasGroup.alpha}, interactable: {canvasGroup.interactable}");
 
         // Pause game
         Time.timeScale = 0f;
@@ -145,7 +200,7 @@ public class EndGameUI : MonoBehaviour
         if (nextLevelButton != null)
             nextLevelButton.gameObject.SetActive(isWin);
 
-        Debug.Log($"[EndGameUI] Panel shown - Canvas sorting order: {endGameCanvas?.sortingOrder}");
+        Debug.Log($"[EndGameUI] Panel shown! activeInHierarchy: {panel.activeInHierarchy}, Canvas order: {endGameCanvas?.sortingOrder}");
     }
 
     void SetStars(int count)

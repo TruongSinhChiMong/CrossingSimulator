@@ -53,6 +53,21 @@ public class GameManager : MonoBehaviour
         if (studentSpawner != null)
         {
             totalStudents = studentSpawner.TotalStudents;
+            Debug.Log($"[GameManager] Got totalStudents from spawner: {totalStudents}");
+        }
+        else
+        {
+            Debug.LogWarning($"[GameManager] studentSpawner is NULL! Using default totalStudents: {totalStudents}");
+        }
+
+        // Log endGameUI status
+        if (endGameUI == null)
+        {
+            Debug.LogError("[GameManager] endGameUI is NOT assigned in Inspector!");
+        }
+        else
+        {
+            Debug.Log($"[GameManager] endGameUI is assigned: {endGameUI.gameObject.name}");
         }
 
         // Parse level number từ tên scene (Map1, Map2, ...)
@@ -62,6 +77,8 @@ public class GameManager : MonoBehaviour
         {
             currentLevel = level;
         }
+        
+        Debug.Log($"[GameManager] Started - Level: {currentLevel}, TotalStudents: {totalStudents}");
     }
 
     /// <summary>
@@ -96,6 +113,8 @@ public class GameManager : MonoBehaviour
     private void CheckEndGame()
     {
         int processedStudents = safeStudents + hitStudents;
+        Debug.Log($"[GameManager] CheckEndGame: processed={processedStudents}, total={totalStudents}, safe={safeStudents}, hit={hitStudents}");
+        
         if (processedStudents < totalStudents) return;
 
         isGameOver = true;
@@ -104,7 +123,7 @@ public class GameManager : MonoBehaviour
         bool isWin = safeStudents >= minSafeToWin;
         int stars = CalculateStars();
 
-        Debug.Log($"[GameManager] Game Over! Win: {isWin}, Stars: {stars}");
+        Debug.Log($"[GameManager] Game Over! Win: {isWin}, Stars: {stars}, minSafeToWin: {minSafeToWin}");
 
         // Lưu tiến độ nếu thắng
         if (isWin && stars > 0)
@@ -115,7 +134,12 @@ public class GameManager : MonoBehaviour
         // Hiển thị UI kết thúc
         if (endGameUI != null)
         {
+            Debug.Log($"[GameManager] Showing EndGameUI...");
             endGameUI.Show(isWin, stars, safeStudents, totalStudents);
+        }
+        else
+        {
+            Debug.LogError("[GameManager] endGameUI is NULL! Cannot show end game screen.");
         }
     }
 

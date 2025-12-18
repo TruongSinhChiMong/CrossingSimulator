@@ -14,9 +14,14 @@ namespace CrossingSimulator.UI
         [Header("UI References")]
         [SerializeField] InputField usernameField;
         [SerializeField] InputField passwordField;
+        [SerializeField] InputField displayNameField;
         [SerializeField] Button loginButton;
+        [SerializeField] Button registerButton;
+        [SerializeField] Button switchModeButton;
         [SerializeField] Text feedbackLabel;
         [SerializeField] GameObject pressAnyKeyPrompt;
+        [SerializeField] Text titleLabel;
+        [SerializeField] GameObject displayNameContainer;
 
         [Header("Scene Flow")]
         [SerializeField] string nextSceneName = "LevelSelection";
@@ -30,6 +35,7 @@ namespace CrossingSimulator.UI
         Font runtimeFont;
         bool loginSucceeded;
         bool isSubmitting;
+        bool isRegisterMode;
         Coroutine loginCoroutine;
         LoginResponse lastLoginResponse;
 
@@ -42,18 +48,34 @@ namespace CrossingSimulator.UI
 
             if (loginButton != null)
                 loginButton.onClick.AddListener(HandleLoginClicked);
+            
+            if (registerButton != null)
+                registerButton.onClick.AddListener(HandleRegisterClicked);
+            
+            if (switchModeButton != null)
+                switchModeButton.onClick.AddListener(HandleSwitchModeClicked);
 
             if (feedbackLabel != null)
                 feedbackLabel.text = string.Empty;
 
             if (pressAnyKeyPrompt != null)
                 pressAnyKeyPrompt.SetActive(false);
+            
+            // Bắt đầu ở chế độ Login
+            isRegisterMode = false;
+            UpdateUIMode();
         }
 
         void OnDestroy()
         {
             if (loginButton != null)
                 loginButton.onClick.RemoveListener(HandleLoginClicked);
+            
+            if (registerButton != null)
+                registerButton.onClick.RemoveListener(HandleRegisterClicked);
+            
+            if (switchModeButton != null)
+                switchModeButton.onClick.RemoveListener(HandleSwitchModeClicked);
 
             if (loginCoroutine != null)
                 StopCoroutine(loginCoroutine);
@@ -75,11 +97,88 @@ namespace CrossingSimulator.UI
 
             if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
             {
-                PopupService.Instance.Show("Nhập username và password trước nhé!");
+                PopupService.Instance.Show("Nhập email và password trước nhé!");
                 return;
             }
 
             BeginLogin(email, password);
+        }
+        
+        void HandleRegisterClicked()
+        {
+            if (isSubmitting)
+                return;
+
+            var email = usernameField != null ? usernameField.text.Trim() : string.Empty;
+            var password = passwordField != null ? passwordField.text.Trim() : string.Empty;
+            var displayName = displayNameField != null ? displayNameField.text.Trim() : string.Empty;
+
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
+            {
+                PopupService.Instance.Show("Nhập email và password trước nhé!");
+                return;
+            }
+            
+            if (string.IsNullOrEmpty(displayName))
+            {
+                PopupService.Instance.Show("Nhập tên hiển thị trước nhé!");
+                return;
+            }
+            
+            if (password.Length < 6)
+            {
+                PopupService.Instance.Show("Password phải có ít nhất 6 ký tự!");
+                return;
+            }
+
+            BeginRegister(email, password, displayName);
+        }
+        
+        void HandleSwitchModeClicked()
+        {
+            if (isSubmitting)
+                return;
+            
+            isRegisterMode = !isRegisterMode;
+            UpdateUIMode();
+            SetFeedback(string.Empty);
+        }
+        
+        void UpdateUIMode()
+        {
+            // Cập nhật title
+            if (titleLabel != null)
+                titleLabel.text = isRegisterMode ? "ĐĂNG KÝ" : title;
+            
+            // Hiện/ẩn display name field
+            if (displayNameContainer != null)
+                displayNameContainer.SetActive(isRegisterMode);
+            else if (displayNameField != null)
+                displayNameField.gameObject.SetActive(isRegisterMode);
+            
+            // Hiện/ẩn buttons
+            if (loginButton != null)
+                loginButton.gameObject.SetActive(!isRegisterMode);
+            
+            if (registerButton != null)
+                registerButton.gameObject.SetActive(isRegisterMode);
+            
+            // Cập nhật vị trí switch button dựa trên mode
+            if (switchModeButton != null)
+            {
+                var switchRect = switchModeButton.GetComponent<RectTransform>();
+                if (switchRect != null)
+                {
+                    // Login mode: switch button cách login button 16px (login Y=-84, height=60 → bottom=-114, switch=-114-16-30=-160)
+                    // Register mode: switch button cách register button 16px (register Y=-186, height=60 → bottom=-216, switch=-216-16-30=-262)
+                    float switchY = isRegisterMode ? -262f : -160f;
+                    switchRect.anchoredPosition = new Vector2(0, switchY);
+                }
+                
+                var btnText = switchModeButton.GetComponentInChildren<Text>();
+                if (btnText != null)
+                    btnText.text = isRegisterMode ? "Đã có tài khoản?" : "Chưa có tài khoản?";
+            }
         }
 
         void BeginLogin(string email, string password)
@@ -113,6 +212,71 @@ namespace CrossingSimulator.UI
                 StopCoroutine(loginCoroutine);
 
             loginCoroutine = ApiService.Instance.PostJson(ApiPaths.Login, payload, OnLoginCompleted);
+        }
+
+        void BeginRegister(string email, string password, string displayName)
+        {
+            loginSucceeded = false;
+            isSubmitting = true;
+            lastLoginResponse = null;
+
+            if (pressAnyKeyPrompt != null)
+                pressAnyKeyPrompt.SetActive(false);
+
+            SetControlsInteractable(false);
+            SetFeedback("Đang đăng ký...");
+
+            var payload = new RegisterRequest
+            {
+                email = email,
+                password = password,
+                displayName = displayName
+            };
+
+            if (loginCoroutine != null)
+                StopCoroutine(loginCoroutine);
+
+            loginCoroutine = ApiService.Instance.PostJson(ApiPaths.Register, payload, OnRegisterCompleted);
+        }
+        
+        void OnRegisterCompleted(ApiResponse response)
+        {
+            isSubmitting = false;
+            loginCoroutine = null;
+
+            var envelope = response.GetEnvelopeOrDefault<RegisterResponse>();
+            var success = response.Success && envelope.IsSuccessStatus && envelope.data != null;
+
+            if (!success)
+            {
+                var message = !string.IsNullOrEmpty(envelope.message)
+                    ? envelope.message
+                    : (!string.IsNullOrEmpty(response.Error) ? response.Error : "Đăng ký thất bại, vui lòng thử lại.");
+
+                SetControlsInteractable(true);
+                PopupService.Instance.Show(message);
+                return;
+            }
+
+            // Đăng ký thành công - tự động đăng nhập
+            var registerData = envelope.data;
+            lastLoginResponse = new LoginResponse
+            {
+                idToken = registerData.idToken,
+                uid = registerData.uid,
+                email = registerData.email,
+                displayName = registerData.displayName,
+                refreshToken = registerData.refreshToken
+            };
+            
+            loginSucceeded = true;
+            AuthTokenStore.Instance.ApplyLoginResponse(lastLoginResponse);
+
+            SetFeedback("Đăng ký thành công! Nhấn phím bất kỳ để vào game.");
+            SetControlsInteractable(false);
+
+            if (pressAnyKeyPrompt != null)
+                pressAnyKeyPrompt.SetActive(true);
         }
 
         void OnFakeLoginSuccess()
@@ -204,33 +368,49 @@ namespace CrossingSimulator.UI
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920, 1080);
 
-            var panel = CreateRect("Panel", canvasGO.transform, new Vector2(700, 520), Vector2.zero);
+            var panel = CreateRect("Panel", canvasGO.transform, new Vector2(700, 620), Vector2.zero);
             var panelImage = panel.gameObject.AddComponent<Image>();
             panelImage.color = new Color(0f, 0f, 0f, 0.65f);
 
-            var titleLabel = CreateText("Title", panel, title, 42, new Vector2(0, 180));
+            titleLabel = CreateText("Title", panel, title, 42, new Vector2(0, 240));
             titleLabel.fontStyle = FontStyle.Bold;
             titleLabel.color = Color.white;
 
-            var usernameLabel = CreateText("UsernameLabel", panel, "Username", 24, new Vector2(0, 100));
-            usernameLabel.alignment = TextAnchor.MiddleLeft;
+            var usernameLabel = CreateLabel("UsernameLabel", panel, "Email", 24, new Vector2(0, 160));
+            usernameField = CreateInputField("UsernameInput", panel, new Vector2(0, 110), "Nhập email");
 
-            usernameField = CreateInputField("UsernameInput", panel, new Vector2(0, 50), "Enter username");
-
-            var passwordLabel = CreateText("PasswordLabel", panel, "Password", 24, new Vector2(0, -20));
-            passwordLabel.alignment = TextAnchor.MiddleLeft;
-
-            passwordField = CreateInputField("PasswordInput", panel, new Vector2(0, -70), "Enter password");
+            var passwordLabel = CreateLabel("PasswordLabel", panel, "Password", 24, new Vector2(0, 40));
+            passwordField = CreateInputField("PasswordInput", panel, new Vector2(0, -10), "Nhập password");
             passwordField.contentType = InputField.ContentType.Password;
+            
+            // Display Name field (chỉ hiện khi đăng ký)
+            var displayNameContainerRect = CreateRect("DisplayNameContainer", panel, new Vector2(520, 100), new Vector2(0, -90));
+            displayNameContainer = displayNameContainerRect.gameObject;
+            
+            var displayNameLabel = CreateLabel("DisplayNameLabel", displayNameContainerRect, "Tên hiển thị", 24, new Vector2(0, 30));
+            displayNameField = CreateInputField("DisplayNameInput", displayNameContainerRect, new Vector2(0, -20), "Nhập tên hiển thị");
 
-            loginButton = CreateButton("LoginButton", panel, new Vector2(0, -150), "Login");
+            // Login button: cách password input (Y=-10, height=55) khoảng 16px
+            // Password bottom = -10 - 27.5 = -37.5, button top = -37.5 - 16 = -53.5
+            // Button height = 60, center = -53.5 - 30 = -83.5 ≈ -84
+            loginButton = CreateButton("LoginButton", panel, new Vector2(0, -84), "Đăng nhập");
+            
+            // Register button: cách displayName input (trong container Y=-90, input Y=-20) khoảng 16px
+            // DisplayName container bottom ≈ -90 - 50 = -140, + 16 + 30 = -186
+            registerButton = CreateButton("RegisterButton", panel, new Vector2(0, -186), "Đăng ký");
+            
+            // Switch mode button cách button chính 16px
+            switchModeButton = CreateButton("SwitchModeButton", panel, new Vector2(0, -160), "Chưa có tài khoản? Đăng ký");
+            var switchBtnImage = switchModeButton.GetComponent<Image>();
+            if (switchBtnImage != null)
+                switchBtnImage.color = new Color(0.3f, 0.3f, 0.3f, 0.8f);
 
-            feedbackLabel = CreateText("FeedbackLabel", panel, string.Empty, 20, new Vector2(0, -220));
+            feedbackLabel = CreateText("FeedbackLabel", panel, string.Empty, 20, new Vector2(0, -230));
             feedbackLabel.color = Color.white;
 
-            var pressLabel = CreateText("PressAnyKey", panel, "Press any key", 24, new Vector2(0, -270));
+            var pressLabel = CreateText("PressAnyKey", panel, "Nhấn phím bất kỳ", 24, new Vector2(0, -270));
             pressLabel.fontStyle = FontStyle.Bold;
-            pressLabel.color = new Color(1f, 1f, 1f, 0.9f);
+            pressLabel.color = Color.white;
             pressLabel.gameObject.SetActive(false);
             pressAnyKeyPrompt = pressLabel.gameObject;
         }
@@ -255,13 +435,27 @@ namespace CrossingSimulator.UI
 
         Text CreateText(string name, RectTransform parent, string content, int fontSize, Vector2 anchoredPosition)
         {
-            var rect = CreateRect(name, parent, new Vector2(400, 40), anchoredPosition);
+            // Dùng width = 520 để căn chỉnh với input field
+            var rect = CreateRect(name, parent, new Vector2(520, 40), anchoredPosition);
             var text = rect.gameObject.AddComponent<Text>();
             text.font = runtimeFont;
             text.alignment = TextAnchor.MiddleCenter;
             text.fontSize = fontSize;
             text.text = content;
-            text.color = new Color(0.9f, 0.9f, 0.9f, 1f);
+            text.color = Color.white;
+            return text;
+        }
+        
+        Text CreateLabel(string name, RectTransform parent, string content, int fontSize, Vector2 anchoredPosition)
+        {
+            // Label căn trái, cùng width với input field
+            var rect = CreateRect(name, parent, new Vector2(520, 35), anchoredPosition);
+            var text = rect.gameObject.AddComponent<Text>();
+            text.font = runtimeFont;
+            text.alignment = TextAnchor.MiddleLeft;
+            text.fontSize = fontSize;
+            text.text = content;
+            text.color = Color.white;
             return text;
         }
 
@@ -291,7 +485,7 @@ namespace CrossingSimulator.UI
         {
             var rect = CreateRect(name, parent, new Vector2(520, 55), anchoredPosition);
             var image = rect.gameObject.AddComponent<Image>();
-            image.color = new Color(1f, 1f, 1f, 0.1f);
+            image.color = new Color(0.2f, 0.2f, 0.25f, 1f); // Màu nền đậm hơn, không trong suốt
 
             var input = rect.gameObject.AddComponent<InputField>();
 
@@ -304,7 +498,7 @@ namespace CrossingSimulator.UI
             placeholder.fontSize = 22;
             placeholder.alignment = TextAnchor.MiddleLeft;
             placeholder.text = placeholderText;
-            placeholder.color = new Color(1f, 1f, 1f, 0.4f);
+            placeholder.color = new Color(0.7f, 0.7f, 0.7f, 1f); // Placeholder rõ hơn
 
             var textRect = CreateChildRect(rect, "Text");
             textRect.offsetMin = new Vector2(16, 8);
@@ -373,10 +567,16 @@ namespace CrossingSimulator.UI
         {
             if (loginButton != null)
                 loginButton.interactable = interactable;
+            if (registerButton != null)
+                registerButton.interactable = interactable;
+            if (switchModeButton != null)
+                switchModeButton.interactable = interactable;
             if (usernameField != null)
                 usernameField.interactable = interactable;
             if (passwordField != null)
                 passwordField.interactable = interactable;
+            if (displayNameField != null)
+                displayNameField.interactable = interactable;
         }
 
         void SetFeedback(string message)

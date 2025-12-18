@@ -18,4 +18,22 @@ namespace CrossingSimulator.Networking
         public string displayName;
         public string refreshToken;
     }
+    
+    [Serializable]
+    public class RegisterRequest
+    {
+        public string email;
+        public string password;
+        public string displayName;
+    }
+
+    [Serializable]
+    public class RegisterResponse
+    {
+        public string idToken;
+        public string uid;
+        public string email;
+        public string displayName;
+        public string refreshToken;
+    }
 }
