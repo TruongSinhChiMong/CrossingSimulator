@@ -1,18 +1,2 @@
 fileFormatVersion: 2
 guid: 7b02d4d3184284010846fd4042825542
-MonoImporter:
-  externalObjects: {}
-  serializedVersion: 2
-  defaultReferences:
-  - button: {instanceID: 0}
-  - starImage: {instanceID: 0}
-  - levelNumberText: {instanceID: 0}
-  - blockStarSprite: {fileID: -8193000550984589093, guid: 75abb7045c210a74c95bee8a72dc6f91, type: 3}
-  - oneStarSprite: {fileID: -7787715715777697990, guid: 1758ce03c301ad745a01ce386a43fbf8, type: 3}
-  - twoStarSprite: {fileID: 1575430082679526904, guid: 141e99d28c8483a4d9961f821f1b7ab8, type: 3}
-  - threeStarSprite: {fileID: 2444977924109663576, guid: bb26dbf5af26d75419a003f852760d70, type: 3}
-  executionOrder: 0
-  icon: {instanceID: 0}
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 

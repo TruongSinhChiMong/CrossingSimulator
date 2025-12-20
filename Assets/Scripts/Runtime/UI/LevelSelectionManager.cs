@@ -1,63 +1,75 @@
-using UnityEngine;
-using UnityEngine.SceneManagement;
+﻿using UnityEngine;
 
 namespace Runtime.UI
 {
     public class LevelSelectionManager : MonoBehaviour
     {
-        [Header("Level Buttons")]
+        [Header("Config")]
+        [SerializeField] private int totalLevels = LevelDataManager.TOTAL_LEVELS;
+
+        [Header("Level Buttons (drag LevelButton_1..LevelButton_5 in order)")]
         [SerializeField] private LevelButton[] levelButtons;
-        
-        [Header("Settings")]
-        [SerializeField] private int totalLevels = 5;
-        
+
+        private void Awake()
+        {
+            // Nếu bạn quên gán hoặc gán sai, tự dùng TOTAL_LEVELS trong LevelDataManager
+            if (totalLevels <= 0)
+                totalLevels = LevelDataManager.TOTAL_LEVELS;
+        }
         private void Start()
         {
-            InitializeLevels();
+            Debug.Log("TEST LOG: Scene LevelSelection is running");
         }
-        
-        private void InitializeLevels()
+
+        private void OnEnable()
         {
-            if (levelButtons == null || levelButtons.Length == 0)
-            {
-                Debug.LogWarning("No level buttons assigned! Please assign level buttons in Inspector.");
-                return;
-            }
-            
-            for (int i = 0; i < levelButtons.Length && i < totalLevels; i++)
-            {
-                if (levelButtons[i] != null)
-                {
-                    LevelData data = LevelDataManager.LoadLevelData(i + 1);
-                    levelButtons[i].Initialize(data);
-                }
-            }
-        }
-        
-        public void BackToLogin()
-        {
-            SceneManager.LoadScene("Login");
-        }
-        
-        public void UnlockAllLevels()
-        {
-            for (int i = 1; i <= totalLevels; i++)
-            {
-                LevelDataManager.SaveLevelData(i, 0);
-            }
-            InitializeLevels();
-        }
-        
-        public void ResetAllLevels()
-        {
-            PlayerPrefs.DeleteAll();
-            PlayerPrefs.Save();
             InitializeLevels();
         }
 
-        public void OpenSettings()
+        /// <summary>
+        /// Load dữ liệu từng level và cập nhật UI button.
+        /// </summary>
+        public void InitializeLevels()
         {
-            SceneManager.LoadScene("Settings");
+            if (levelButtons == null || levelButtons.Length == 0)
+            {
+                Debug.LogWarning("[LevelSelectionManager] levelButtons is not assigned.", this);
+                return;
+            }
+
+            int count = Mathf.Min(totalLevels, levelButtons.Length);
+
+            for (int i = 0; i < count; i++)
+            {
+                int levelNumber = i + 1; // level bắt đầu từ 1
+                LevelData data = LevelDataManager.LoadLevelData(levelNumber);
+
+                if (levelButtons[i] == null)
+                {
+                    Debug.LogWarning($"[LevelSelectionManager] levelButtons[{i}] is null (level {levelNumber}).", this);
+                    continue;
+                }
+
+                levelButtons[i].Setup(data);
+            }
+        }
+
+        // =======================
+        // Debug / tiện cho test
+        // =======================
+
+        [ContextMenu("Reset All Levels")]
+        public void ResetAllLevels()
+        {
+            LevelDataManager.ResetAllLevels();
+            InitializeLevels();
+        }
+
+        [ContextMenu("Unlock All Levels (Debug)")]
+        public void UnlockAllLevelsForDebug()
+        {
+            LevelDataManager.UnlockAllLevelsForDebug();
+            InitializeLevels();
         }
     }
 }
