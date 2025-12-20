@@ -460,6 +460,10 @@ MonoBehaviour:
   - {fileID: 21300000, guid: a97590aae2785da409645741a1f27d4d, type: 3}
   - {fileID: 21300000, guid: 77779dc91caaa1442a3a0fbfa65733ba, type: 3}
   - {fileID: 21300000, guid: ec64428959d4f984bb0a93243cdade75, type: 3}
+  - {fileID: 21300000, guid: 1cd3916d12250cf48b1ce5aa134e18cc, type: 3}
+  - {fileID: 21300000, guid: 51df372966252924fa67ca16b644b4f9, type: 3}
+  - {fileID: 21300000, guid: 839550a8aca5ea64cabcce0104a9d09c, type: 3}
+  - {fileID: 21300000, guid: e588caaa4e8caa4449127197e712c7ba, type: 3}
 --- !u!212 &280744091
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -2564,6 +2568,9 @@ MonoBehaviour:
   - {fileID: 21300000, guid: a97590aae2785da409645741a1f27d4d, type: 3}
   - {fileID: 21300000, guid: 77779dc91caaa1442a3a0fbfa65733ba, type: 3}
   - {fileID: 21300000, guid: ec64428959d4f984bb0a93243cdade75, type: 3}
+  - {fileID: 21300000, guid: 1cd3916d12250cf48b1ce5aa134e18cc, type: 3}
+  - {fileID: 21300000, guid: 51df372966252924fa67ca16b644b4f9, type: 3}
+  - {fileID: 21300000, guid: 839550a8aca5ea64cabcce0104a9d09c, type: 3}
 --- !u!212 &1651474641
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -3570,7 +3577,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::StudentSpawner
   prefabTypeA: {fileID: 1784494587744594190, guid: 8467607fea3130e429926a0efd4c6656, type: 3}
   prefabTypeB: {fileID: 7543722937786600794, guid: 0d462846d189cc44f8ef40ad81f7aec4, type: 3}
-  totalStudents: 6
+  totalStudents: 20
   spawnPosition: {x: 5, y: -2}
   minSpawnDelay: 3
   maxSpawnDelay: 6
