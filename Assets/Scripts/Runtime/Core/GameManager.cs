@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using CrossingSimulator.Networking;
 
 public class GameManager : MonoBehaviour
 {
@@ -125,11 +126,8 @@ public class GameManager : MonoBehaviour
 
         Debug.Log($"[GameManager] Game Over! Win: {isWin}, Stars: {stars}, minSafeToWin: {minSafeToWin}");
 
-        // Lưu tiến độ nếu thắng
-        if (isWin && stars > 0)
-        {
-            Runtime.UI.LevelDataManager.SaveLevelData(currentLevel, stars);
-        }
+        // Lưu tiến độ lên server
+        SaveProgressToServer(stars, isWin);
 
         // Hiển thị UI kết thúc
         if (endGameUI != null)
@@ -185,5 +183,83 @@ public class GameManager : MonoBehaviour
     {
         Time.timeScale = 1f;
         SceneManager.LoadScene("LevelSelection");
+    }
+
+    /// <summary>
+    /// Lưu tiến độ level lên server qua API
+    /// </summary>
+    private void SaveProgressToServer(int stars, bool isWin)
+    {
+        // Lấy game data hiện tại từ server
+        GameDataService.Instance.GetGameData((success, gameData) =>
+        {
+            if (!success || gameData == null)
+            {
+                Debug.LogWarning("[GameManager] Failed to get game data, creating new...");
+                gameData = new GameData
+                {
+                    unlockLevel = 1,
+                    levels = new System.Collections.Generic.List<LevelProgress>()
+                };
+            }
+
+            // Đảm bảo có đủ levels trong list
+            while (gameData.levels.Count < 5)
+            {
+                int levelNum = gameData.levels.Count + 1;
+                gameData.levels.Add(new LevelProgress($"Map{levelNum}", 0, 0, levelNum == 1));
+            }
+
+            // Cập nhật level hiện tại
+            string currentMapName = $"Map{currentLevel}";
+            var currentLevelProgress = gameData.levels.Find(l => l.map == currentMapName);
+            
+            if (currentLevelProgress != null)
+            {
+                // Chỉ cập nhật nếu số sao mới cao hơn
+                if (stars > currentLevelProgress.star)
+                {
+                    currentLevelProgress.star = stars;
+                    currentLevelProgress.score = safeStudents.ToString();
+                }
+                currentLevelProgress.unlock = true;
+            }
+
+            // Nếu thắng (>= 1 sao), unlock level tiếp theo
+            if (isWin && stars >= 1)
+            {
+                int nextLevel = currentLevel + 1;
+                if (nextLevel <= 5)
+                {
+                    string nextMapName = $"Map{nextLevel}";
+                    var nextLevelProgress = gameData.levels.Find(l => l.map == nextMapName);
+                    
+                    if (nextLevelProgress != null)
+                    {
+                        nextLevelProgress.unlock = true;
+                        Debug.Log($"[GameManager] Unlocked {nextMapName}");
+                    }
+
+                    // Cập nhật unlockLevel nếu cần
+                    if (nextLevel > gameData.unlockLevel)
+                    {
+                        gameData.unlockLevel = nextLevel;
+                    }
+                }
+            }
+
+            // POST lên server
+            GameDataService.Instance.SaveGameData(gameData, (saveSuccess, message) =>
+            {
+                if (saveSuccess)
+                {
+                    Debug.Log($"[GameManager] Progress saved to server: Level {currentLevel}, Stars: {stars}");
+                }
+                else
+                {
+                    Debug.LogError($"[GameManager] Failed to save progress: {message}");
+                }
+            });
+        });
     }
 }

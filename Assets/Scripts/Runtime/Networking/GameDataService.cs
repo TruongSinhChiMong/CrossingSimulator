@@ -79,9 +79,10 @@ namespace CrossingSimulator.Networking
                 {
                     if (response.TryGetEnvelope<GameSettingsResponse>(out var envelope) && envelope.data != null)
                     {
-                        var settings = envelope.data.data;
+                        // Response format: { status, data: { uid, settings, metadata } }
+                        var settings = envelope.data.settings ?? new GameSettings { sound = true };
                         SaveSettingsLocal(settings);
-                        Debug.Log("[GameDataService] Settings loaded successfully");
+                        Debug.Log($"[GameDataService] Settings loaded successfully. Updated: {envelope.data.metadata?.updatedAtIso}");
                         onComplete?.Invoke(true, settings);
                     }
                     else
@@ -129,6 +130,7 @@ namespace CrossingSimulator.Networking
 
         /// <summary>
         /// GET /user/game/data - Lấy game data
+        /// Nếu chưa có data (lần đầu chơi), tự động tạo data mặc định và POST lên server
         /// </summary>
         public void GetGameData(Action<bool, GameData> onComplete)
         {
@@ -138,15 +140,26 @@ namespace CrossingSimulator.Networking
                 {
                     if (response.TryGetEnvelope<GameDataResponse>(out var envelope) && envelope.data != null)
                     {
-                        var gameData = envelope.data.data;
+                        // Response format: { code, data: { uid, gameData, metadata } }
+                        var gameData = envelope.data.gameData;
+                        
+                        // Nếu gameData null (lần đầu chơi), tạo data mặc định và POST lên server
+                        if (gameData == null || gameData.levels == null || gameData.levels.Count == 0)
+                        {
+                            Debug.Log("[GameDataService] No game data found, creating default data...");
+                            CreateDefaultGameData(onComplete);
+                            return;
+                        }
+                        
                         SaveGameDataLocal(gameData);
-                        Debug.Log("[GameDataService] Game data loaded successfully");
+                        Debug.Log($"[GameDataService] Game data loaded successfully. Updated: {envelope.data.metadata?.updatedAtIso}");
                         onComplete?.Invoke(true, gameData);
                     }
                     else
                     {
-                        var defaultData = LoadGameDataLocal();
-                        onComplete?.Invoke(true, defaultData);
+                        // Parse fail hoặc data null, tạo mới
+                        Debug.Log("[GameDataService] Failed to parse game data, creating default...");
+                        CreateDefaultGameData(onComplete);
                     }
                 }
                 else
@@ -155,6 +168,41 @@ namespace CrossingSimulator.Networking
                     var localData = LoadGameDataLocal();
                     onComplete?.Invoke(false, localData);
                 }
+            });
+        }
+
+        /// <summary>
+        /// Tạo game data mặc định (level 1 mở, 0 sao) và POST lên server
+        /// </summary>
+        private void CreateDefaultGameData(Action<bool, GameData> onComplete)
+        {
+            var defaultData = new GameData
+            {
+                unlockLevel = 1,
+                levels = new System.Collections.Generic.List<LevelProgress>
+                {
+                    new LevelProgress("Map1", 0, 0, true),  // Level 1 mở
+                    new LevelProgress("Map2", 0, 0, false),
+                    new LevelProgress("Map3", 0, 0, false),
+                    new LevelProgress("Map4", 0, 0, false),
+                    new LevelProgress("Map5", 0, 0, false)
+                }
+            };
+
+            // POST lên server để khởi tạo
+            SaveGameData(defaultData, (success, message) =>
+            {
+                if (success)
+                {
+                    Debug.Log("[GameDataService] Default game data created and saved to server");
+                }
+                else
+                {
+                    Debug.LogWarning($"[GameDataService] Failed to save default data to server: {message}");
+                }
+                
+                // Trả về default data dù POST thành công hay không
+                onComplete?.Invoke(true, defaultData);
             });
         }
 

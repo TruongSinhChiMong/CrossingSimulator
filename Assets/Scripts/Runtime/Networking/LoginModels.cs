@@ -24,16 +24,14 @@ namespace CrossingSimulator.Networking
     {
         public string email;
         public string password;
-        public string displayName;
     }
 
     [Serializable]
     public class RegisterResponse
     {
-        public string idToken;
         public string uid;
         public string email;
-        public string displayName;
+        public string idToken;
         public string refreshToken;
     }
 }

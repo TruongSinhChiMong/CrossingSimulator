@@ -54,12 +54,21 @@ public class StudentSpawner : MonoBehaviour
     // danh sách học sinh còn đang xếp hàng chờ bên phải
     private readonly List<StudentController> waitingStudents = new List<StudentController>();
 
+    private void Awake()
+    {
+        Debug.Log($"[StudentSpawner] Awake - GameObject: {gameObject.name}, Scene: {gameObject.scene.name}");
+        Debug.Log($"[StudentSpawner] Awake - prefabTypeA: {(prefabTypeA != null ? prefabTypeA.name : "NULL")}, prefabTypeB: {(prefabTypeB != null ? prefabTypeB.name : "NULL")}");
+    }
+
     private void Start()
     {
         spawnedCount = 0;
         succeededCount = 0;
         deadCount = 0;
         crossingCount = 0;
+
+        // Debug prefab references
+        Debug.Log($"[StudentSpawner] Start - prefabTypeA: {(prefabTypeA != null ? prefabTypeA.name : "NULL")}, prefabTypeB: {(prefabTypeB != null ? prefabTypeB.name : "NULL")}");
 
         UpdateUI();
         StartCoroutine(SpawnRoutine());

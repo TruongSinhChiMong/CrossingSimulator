@@ -125,11 +125,21 @@ namespace CrossingSimulator.Networking
         {
             var tokenStore = AuthTokenStore.Instance;
             if (tokenStore == null)
+            {
+                Debug.LogWarning("[ApiService] AuthTokenStore is null!");
                 return;
+            }
 
             var token = tokenStore.AccessToken;
             if (!string.IsNullOrEmpty(token))
+            {
                 request.SetRequestHeader("Authorization", $"Bearer {token}");
+                Debug.Log($"[ApiService] Applied auth token to request: {request.url} (token length: {token.Length})");
+            }
+            else
+            {
+                Debug.LogWarning($"[ApiService] No auth token available for request: {request.url}");
+            }
         }
     }
 
@@ -166,16 +176,20 @@ namespace CrossingSimulator.Networking
             envelope = default;
 
             if (string.IsNullOrEmpty(Body))
+            {
+                Debug.LogWarning($"[ApiService] Empty response body from '{Url}'");
                 return false;
+            }
 
             try
             {
+                Debug.Log($"[ApiService] Response from '{Url}': {Body}");
                 envelope = JsonUtility.FromJson<ApiResponseEnvelope<TData>>(Body);
                 return envelope != null;
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[ApiService] Failed to parse response envelope from '{Url}': {ex.Message}");
+                Debug.LogWarning($"[ApiService] Failed to parse response envelope from '{Url}': {ex.Message}\nBody: {Body}");
                 envelope = default;
                 return false;
             }

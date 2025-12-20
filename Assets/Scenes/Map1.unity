@@ -3505,7 +3505,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StudentSpawner
   prefabTypeA: {fileID: 1784494587744594190, guid: 8467607fea3130e429926a0efd4c6656, type: 3}
-  prefabTypeB: {fileID: 7543722937786600794, guid: 0d462846d189cc44f8ef40ad81f7aec4, type: 3}
+  prefabTypeB: {fileID: 0}
   totalStudents: 6
   spawnPosition: {x: 5, y: -2}
   minSpawnDelay: 3

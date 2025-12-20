@@ -22,10 +22,23 @@ namespace CrossingSimulator.Networking
         }
     }
 
+    /// <summary>
+    /// Response từ API /user/game/settings
+    /// Format: { status, data: { uid, settings, metadata } }
+    /// </summary>
     [Serializable]
     public class GameSettingsResponse
     {
-        public GameSettings data;
+        public string uid;
+        public GameSettings settings;
+        public SettingsMetadata metadata;
+    }
+
+    [Serializable]
+    public class SettingsMetadata
+    {
+        public long updatedAt;
+        public string updatedAtIso;
     }
 
     // ============ GAME DATA (Level Progress) ============
@@ -52,11 +65,12 @@ namespace CrossingSimulator.Networking
     [Serializable]
     public class GameData
     {
-        public int unlockLevel;
+        public int unlockLevel = 1; // Default: level 1 mở
         public List<LevelProgress> levels;
 
         public GameData()
         {
+            unlockLevel = 1;
             levels = new List<LevelProgress>();
         }
     }
@@ -72,9 +86,22 @@ namespace CrossingSimulator.Networking
         }
     }
 
+    /// <summary>
+    /// Response từ API /user/game/data
+    /// Format: { status, data: { uid, gameData, metadata } }
+    /// </summary>
     [Serializable]
     public class GameDataResponse
     {
-        public GameData data;
+        public string uid;
+        public GameData gameData;
+        public GameDataMetadata metadata;
+    }
+
+    [Serializable]
+    public class GameDataMetadata
+    {
+        public long updatedAt;
+        public string updatedAtIso;
     }
 }

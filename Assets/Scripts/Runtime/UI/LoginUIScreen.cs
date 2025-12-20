@@ -229,8 +229,7 @@ namespace CrossingSimulator.UI
             var payload = new RegisterRequest
             {
                 email = email,
-                password = password,
-                displayName = displayName
+                password = password
             };
 
             if (loginCoroutine != null)
@@ -265,7 +264,7 @@ namespace CrossingSimulator.UI
                 idToken = registerData.idToken,
                 uid = registerData.uid,
                 email = registerData.email,
-                displayName = registerData.displayName,
+                displayName = null,
                 refreshToken = registerData.refreshToken
             };
             
